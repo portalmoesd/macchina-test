@@ -142,6 +142,104 @@ def extract_hs4(filename, sheet="2020-2025-years"):
     return years, products
 
 
+def extract_fdi_countries(filename, sheet="FDI (annual)"):
+    df = pd.read_excel(DATA_DIR / "fdi" / filename, sheet_name=sheet, header=None)
+    years_raw = df.iloc[3, 2:].tolist()
+    years = []
+    for y in years_raw:
+        try:
+            years.append(int(float(str(y).replace("*", "").strip())))
+        except (ValueError, TypeError):
+            years.append(str(y))
+
+    countries = {}
+    for i in range(4, len(df)):
+        code = df.iloc[i, 0]
+        name = df.iloc[i, 1]
+        if pd.isna(code) or pd.isna(name):
+            continue
+        name_str = str(name).strip()
+        if name_str in ("Total", "of which:", "EU counties (27)"):
+            continue
+        try:
+            code_int = int(float(code))
+        except (ValueError, TypeError):
+            continue
+
+        vals = []
+        for v in df.iloc[i, 2:].tolist():
+            try:
+                vals.append(round(float(v), 2) if pd.notna(v) else 0)
+            except (ValueError, TypeError):
+                vals.append(0)
+
+        countries[str(code_int)] = {"name": name_str, "values": vals}
+
+    # Total row
+    total_vals = []
+    for v in df.iloc[4, 2:].tolist():
+        try:
+            total_vals.append(round(float(v), 2) if pd.notna(v) else 0)
+        except (ValueError, TypeError):
+            total_vals.append(0)
+
+    return years, countries, total_vals
+
+
+def extract_fdi_sectors(filename, sheet="ENG (annual)"):
+    df = pd.read_excel(DATA_DIR / "fdi" / filename, sheet_name=sheet, header=None)
+    years_raw = df.iloc[3, 1:].tolist()
+    years = []
+    for y in years_raw:
+        try:
+            years.append(int(float(str(y).replace("*", "").strip())))
+        except (ValueError, TypeError):
+            years.append(str(y))
+
+    sectors = []
+    for i in range(4, len(df)):
+        name = df.iloc[i, 0]
+        if pd.isna(name):
+            continue
+        name_str = str(name).strip()
+        if name_str in ("Total", "of which:", "Other"):
+            continue
+
+        vals = []
+        for v in df.iloc[i, 1:].tolist():
+            try:
+                vals.append(round(float(v), 2) if pd.notna(v) else 0)
+            except (ValueError, TypeError):
+                vals.append(0)
+
+        sectors.append({"n": name_str, "v": vals})
+
+    return years, sectors
+
+
+def extract_fdi_quarterly(filename):
+    df = pd.read_excel(DATA_DIR / "fdi" / filename, header=None)
+    rows = []
+    for i in range(4, len(df)):
+        year = df.iloc[i, 0]
+        if pd.isna(year):
+            continue
+        try:
+            yr = int(float(year))
+        except (ValueError, TypeError):
+            continue
+        total = round(float(df.iloc[i, 1]), 2) if pd.notna(df.iloc[i, 1]) else 0
+        quarters = []
+        for c in range(2, 6):
+            v = df.iloc[i, c]
+            try:
+                quarters.append(round(float(v), 2) if pd.notna(v) else 0)
+            except (ValueError, TypeError):
+                quarters.append(0)
+        rows.append({"y": yr, "t": total, "q": quarters})
+    return rows
+
+
 def main():
     OUT_DIR.mkdir(exist_ok=True)
 
@@ -163,6 +261,15 @@ def main():
     print("Processing HS4 imports...")
     hs4_imp_years, hs4_imp = extract_hs4("Import-Product-by-4-digit-2015-2026.xlsx")
 
+    print("Processing FDI by country...")
+    fdi_years, fdi_countries, fdi_total = extract_fdi_countries("FDI_Eng-countries.xlsx")
+
+    print("Processing FDI by sector...")
+    fdi_sec_years, fdi_sectors = extract_fdi_sectors("FDI_ENG-sectors-NACE-2.xlsx")
+
+    print("Processing FDI quarterly...")
+    fdi_quarterly = extract_fdi_quarterly("FDI_by_Quarters_Eng.xlsx")
+
     # Build country list from export data
     country_list = []
     for code, info in exp_countries.items():
@@ -179,6 +286,13 @@ def main():
         "hs4_years": hs4_exp_years,
         "hs4_export": hs4_exp,
         "hs4_import": hs4_imp,
+        "fdi_years": fdi_years,
+        "fdi_countries": {k: v["values"] for k, v in fdi_countries.items()},
+        "fdi_country_names": {k: v["name"] for k, v in fdi_countries.items()},
+        "fdi_total": fdi_total,
+        "fdi_sec_years": fdi_sec_years,
+        "fdi_sectors": fdi_sectors,
+        "fdi_quarterly": fdi_quarterly,
     }
 
     out_path = OUT_DIR / "trade.json"
