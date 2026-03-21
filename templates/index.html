@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Georgia Trade Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Georgia Trade Report</h1>
+            <p class="subtitle">Data source: National Statistics Office of Georgia (GeoStat)</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Controls -->
+        <section class="controls">
+            <div class="control-group">
+                <label for="country-select">Select Country</label>
+                <select id="country-select">
+                    <option value="">-- Choose a country --</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="period-select">Period (Years)</label>
+                <select id="period-select">
+                    <option value="5" selected>Last 5 Years</option>
+                    <option value="10">Last 10 Years</option>
+                    <option value="20">Last 20 Years</option>
+                    <option value="0">All Available</option>
+                </select>
+            </div>
+            <button id="generate-btn" onclick="generateReport()">Generate Report</button>
+        </section>
+
+        <!-- Report content (hidden until generated) -->
+        <div id="report" style="display:none;">
+
+            <!-- Summary table -->
+            <section class="report-section">
+                <h2 id="report-title">Georgia &ndash; <span id="country-name-display"></span></h2>
+                <table class="summary-table" id="summary-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th id="summary-prev-year"></th>
+                            <th id="summary-curr-year"></th>
+                            <th>Change %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Turnover</td>
+                            <td id="sum-turnover-prev"></td>
+                            <td id="sum-turnover-curr"></td>
+                            <td id="sum-turnover-chg"></td>
+                        </tr>
+                        <tr>
+                            <td>Export</td>
+                            <td id="sum-export-prev"></td>
+                            <td id="sum-export-curr"></td>
+                            <td id="sum-export-chg"></td>
+                        </tr>
+                        <tr>
+                            <td>Import</td>
+                            <td id="sum-import-prev"></td>
+                            <td id="sum-import-curr"></td>
+                            <td id="sum-import-chg"></td>
+                        </tr>
+                        <tr>
+                            <td>Balance</td>
+                            <td id="sum-balance-prev"></td>
+                            <td id="sum-balance-curr"></td>
+                            <td id="sum-balance-chg"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="unit-note">Values in Thousand USD</p>
+            </section>
+
+            <!-- Turnover Chart -->
+            <section class="report-section">
+                <h2>Trade Turnover</h2>
+                <div class="chart-container">
+                    <canvas id="turnover-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- Export / Import Chart -->
+            <section class="report-section">
+                <h2>Export vs Import</h2>
+                <div class="chart-container">
+                    <canvas id="export-import-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- Balance Chart -->
+            <section class="report-section">
+                <h2>Trade Balance</h2>
+                <div class="chart-container">
+                    <canvas id="balance-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- Monthly breakdown for latest full year -->
+            <section class="report-section">
+                <h2 id="monthly-title">Monthly Breakdown</h2>
+                <div class="chart-container">
+                    <canvas id="monthly-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- Yearly Data Table -->
+            <section class="report-section">
+                <h2>Yearly Trade Data</h2>
+                <div class="table-scroll">
+                    <table class="data-table" id="yearly-table">
+                        <thead><tr id="yearly-header"></tr></thead>
+                        <tbody id="yearly-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Top Export Products (HS4) -->
+            <section class="report-section">
+                <h2>Top Export Products (Georgia Total, HS 4-digit)</h2>
+                <div class="chart-container">
+                    <canvas id="export-products-chart"></canvas>
+                </div>
+                <div class="table-scroll">
+                    <table class="data-table" id="export-products-table">
+                        <thead><tr id="exp-prod-header"></tr></thead>
+                        <tbody id="exp-prod-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Top Import Products (HS4) -->
+            <section class="report-section">
+                <h2>Top Import Products (Georgia Total, HS 4-digit)</h2>
+                <div class="chart-container">
+                    <canvas id="import-products-chart"></canvas>
+                </div>
+                <div class="table-scroll">
+                    <table class="data-table" id="import-products-table">
+                        <thead><tr id="imp-prod-header"></tr></thead>
+                        <tbody id="imp-prod-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+
+        <div id="loading" style="display:none;">
+            <div class="spinner"></div>
+            <p>Loading trade data...</p>
+        </div>
+    </main>
+
+    <footer>
+        <p>Data: National Statistics Office of Georgia (GeoStat) &bull; <a href="https://geostat.ge" target="_blank">geostat.ge</a></p>
+    </footer>
+
+    <script>
+        let charts = {};
+
+        // Load countries on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            const resp = await fetch('/api/countries');
+            const countries = await resp.json();
+            const select = document.getElementById('country-select');
+            countries.sort((a, b) => a.name.localeCompare(b.name));
+            countries.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.code;
+                opt.textContent = c.name;
+                select.appendChild(opt);
+            });
+        });
+
+        function fmt(val) {
+            if (val === null || val === undefined) return '-';
+            return val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function pctChange(curr, prev) {
+            if (!prev || prev === 0) return '-';
+            const pct = ((curr - prev) / Math.abs(prev) * 100);
+            const sign = pct >= 0 ? '+' : '';
+            return sign + pct.toFixed(1) + '%';
+        }
+
+        function destroyChart(name) {
+            if (charts[name]) { charts[name].destroy(); charts[name] = null; }
+        }
+
+        function createBarChart(canvasId, labels, datasets, stacked) {
+            destroyChart(canvasId);
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            charts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' Thsd. USD'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { stacked: !!stacked },
+                        y: {
+                            stacked: !!stacked,
+                            ticks: {
+                                callback: v => v.toLocaleString()
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createHorizontalBarChart(canvasId, labels, values, color) {
+            destroyChart(canvasId);
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            charts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: color,
+                        borderRadius: 3,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => fmt(ctx.parsed.x) + ' Thsd. USD'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { callback: v => v.toLocaleString() } }
+                    }
+                }
+            });
+        }
+
+        async function generateReport() {
+            const code = document.getElementById('country-select').value;
+            if (!code) { alert('Please select a country'); return; }
+
+            const periodYears = parseInt(document.getElementById('period-select').value);
+
+            document.getElementById('report').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+
+            try {
+                const resp = await fetch(`/api/report/${code}`);
+                const data = await resp.json();
+
+                // Filter years by period
+                let allYears = Object.keys(data.yearly).map(Number).sort();
+                if (periodYears > 0) {
+                    const maxYear = Math.max(...allYears);
+                    allYears = allYears.filter(y => y > maxYear - periodYears);
+                }
+                const yearLabels = allYears.map(String);
+
+                // Country name
+                document.getElementById('country-name-display').textContent = data.country_name;
+
+                // Summary table
+                const latestYear = allYears[allYears.length - 1];
+                const prevYear = allYears[allYears.length - 2];
+                const latest = data.yearly[latestYear];
+                const prev = data.yearly[prevYear];
+
+                document.getElementById('summary-prev-year').textContent = prevYear;
+                document.getElementById('summary-curr-year').textContent = latestYear + '*';
+
+                if (latest && prev) {
+                    document.getElementById('sum-turnover-prev').textContent = fmt(prev.turnover);
+                    document.getElementById('sum-turnover-curr').textContent = fmt(latest.turnover);
+                    document.getElementById('sum-turnover-chg').textContent = pctChange(latest.turnover, prev.turnover);
+
+                    document.getElementById('sum-export-prev').textContent = fmt(prev.export);
+                    document.getElementById('sum-export-curr').textContent = fmt(latest.export);
+                    document.getElementById('sum-export-chg').textContent = pctChange(latest.export, prev.export);
+
+                    document.getElementById('sum-import-prev').textContent = fmt(prev.import);
+                    document.getElementById('sum-import-curr').textContent = fmt(latest.import);
+                    document.getElementById('sum-import-chg').textContent = pctChange(latest.import, prev.import);
+
+                    document.getElementById('sum-balance-prev').textContent = fmt(prev.balance);
+                    document.getElementById('sum-balance-curr').textContent = fmt(latest.balance);
+                    document.getElementById('sum-balance-chg').textContent = pctChange(latest.balance, prev.balance);
+                }
+
+                // Turnover chart
+                const turnoverData = allYears.map(y => data.yearly[y]?.turnover || 0);
+                createBarChart('turnover-chart', yearLabels, [{
+                    label: 'Trade Turnover',
+                    data: turnoverData,
+                    backgroundColor: '#2563eb',
+                    borderRadius: 4,
+                }]);
+
+                // Export vs Import chart
+                const exportData = allYears.map(y => data.yearly[y]?.export || 0);
+                const importData = allYears.map(y => data.yearly[y]?.import || 0);
+                createBarChart('export-import-chart', yearLabels, [
+                    { label: 'Export', data: exportData, backgroundColor: '#16a34a', borderRadius: 4 },
+                    { label: 'Import', data: importData, backgroundColor: '#dc2626', borderRadius: 4 },
+                ]);
+
+                // Balance chart
+                const balanceData = allYears.map(y => data.yearly[y]?.balance || 0);
+                destroyChart('balance-chart');
+                const balCtx = document.getElementById('balance-chart').getContext('2d');
+                charts['balance-chart'] = new Chart(balCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: yearLabels,
+                        datasets: [{
+                            label: 'Trade Balance',
+                            data: balanceData,
+                            backgroundColor: balanceData.map(v => v >= 0 ? '#16a34a' : '#dc2626'),
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => 'Balance: ' + fmt(ctx.parsed.y) + ' Thsd. USD'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { ticks: { callback: v => v.toLocaleString() } }
+                        }
+                    }
+                });
+
+                // Monthly chart - fetch for the latest full year (not 2026 partial)
+                const latestFullYear = allYears[allYears.length - 1] < 2026
+                    ? allYears[allYears.length - 1]
+                    : (allYears.length > 1 ? allYears[allYears.length - 2] : allYears[allYears.length - 1]);
+
+                document.getElementById('monthly-title').textContent = `Monthly Breakdown (${latestFullYear})`;
+                const monthResp = await fetch(`/api/monthly/${code}/${latestFullYear}`);
+                const monthData = await monthResp.json();
+
+                if (monthData.length > 0) {
+                    const monthLabels = monthData.map(m => m.month.substring(0, 3));
+                    createBarChart('monthly-chart', monthLabels, [
+                        { label: 'Export', data: monthData.map(m => m.export), backgroundColor: '#16a34a', borderRadius: 3 },
+                        { label: 'Import', data: monthData.map(m => m.import), backgroundColor: '#dc2626', borderRadius: 3 },
+                    ]);
+                }
+
+                // Yearly data table
+                const header = document.getElementById('yearly-header');
+                const body = document.getElementById('yearly-body');
+                header.innerHTML = '<th>Year</th><th>Turnover</th><th>Export</th><th>Import</th><th>Balance</th>';
+                body.innerHTML = '';
+                [...allYears].reverse().forEach(y => {
+                    const d = data.yearly[y];
+                    if (!d) return;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${y}</td><td>${fmt(d.turnover)}</td><td>${fmt(d.export)}</td><td>${fmt(d.import)}</td><td class="${d.balance >= 0 ? 'positive' : 'negative'}">${fmt(d.balance)}</td>`;
+                    body.appendChild(tr);
+                });
+
+                // HS4 Export products
+                if (data.top_export_products.length > 0) {
+                    const latestHS = data.hs4_years[data.hs4_years.length - 1];
+                    const expLabels = data.top_export_products.slice(0, 10).map(p =>
+                        p.code + ' ' + (p.name.length > 40 ? p.name.substring(0, 37) + '...' : p.name)
+                    );
+                    const expValues = data.top_export_products.slice(0, 10).map(p => p.values[latestHS] || 0);
+                    const prodCanvas = document.getElementById('export-products-chart');
+                    prodCanvas.parentElement.style.height = '400px';
+                    createHorizontalBarChart('export-products-chart', expLabels, expValues, '#16a34a');
+
+                    buildProductTable('exp-prod-header', 'exp-prod-body', data.top_export_products, data.hs4_years);
+                }
+
+                // HS4 Import products
+                if (data.top_import_products.length > 0) {
+                    const latestHS = data.hs4_years[data.hs4_years.length - 1];
+                    const impLabels = data.top_import_products.slice(0, 10).map(p =>
+                        p.code + ' ' + (p.name.length > 40 ? p.name.substring(0, 37) + '...' : p.name)
+                    );
+                    const impValues = data.top_import_products.slice(0, 10).map(p => p.values[latestHS] || 0);
+                    const prodCanvas = document.getElementById('import-products-chart');
+                    prodCanvas.parentElement.style.height = '400px';
+                    createHorizontalBarChart('import-products-chart', impLabels, impValues, '#dc2626');
+
+                    buildProductTable('imp-prod-header', 'imp-prod-body', data.top_import_products, data.hs4_years);
+                }
+
+                document.getElementById('report').style.display = 'block';
+            } catch (err) {
+                alert('Error loading report: ' + err.message);
+                console.error(err);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function buildProductTable(headerId, bodyId, products, years) {
+            const header = document.getElementById(headerId);
+            const body = document.getElementById(bodyId);
+            header.innerHTML = '<th>HS Code</th><th>Product</th>' + years.map(y => `<th>${y}</th>`).join('');
+            body.innerHTML = '';
+            products.forEach(p => {
+                const tr = document.createElement('tr');
+                const nameTd = p.name.length > 60 ? p.name.substring(0, 57) + '...' : p.name;
+                let cells = `<td class="code-cell">${p.code}</td><td class="name-cell" title="${p.name}">${nameTd}</td>`;
+                years.forEach(y => {
+                    cells += `<td>${fmt(p.values[y] || 0)}</td>`;
+                });
+                tr.innerHTML = cells;
+                body.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
