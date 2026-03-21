@@ -1,0 +1,46 @@
+name: Refresh GeoStat Data
+
+on:
+  schedule:
+    # Runs on the 5th of every month at 06:00 UTC
+    - cron: "0 6 5 * *"
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download fresh XLSX files from GeoStat
+        run: |
+          python geostat_scraper.py download \
+            export_by_country import_by_country \
+            export_hs4_2015 import_hs4_2015 \
+            fdi_by_country fdi_by_sector fdi_quarterly \
+            --force
+
+      - name: Build JSON data
+        run: python build_data.py
+
+      - name: Commit and push if data changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/trade.json
+          if git diff --cached --quiet; then
+            echo "No data changes detected."
+          else
+            git commit -m "Auto-refresh GeoStat data ($(date +%Y-%m-%d))"
+            git push
+          fi

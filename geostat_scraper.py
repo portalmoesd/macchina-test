@@ -168,6 +168,22 @@ DATASETS = {
         "url": "https://geostat.ge/media/77651/Import-Size-2015_2026.xlsx",
         "description": "Import by Size Classes of Traders (2015-2026)",
     },
+    # ── FDI (Foreign Direct Investment) ────────────────────────────────────
+    "fdi_by_country": {
+        "url": "https://geostat.ge/media/77518/FDI_Eng-countries.xlsx",
+        "description": "FDI by Countries (English)",
+        "subdir": "fdi",
+    },
+    "fdi_by_sector": {
+        "url": "https://geostat.ge/media/77519/FDI_ENG-sectors-NACE-2.xlsx",
+        "description": "FDI by Economic Sectors NACE Rev.2 (English)",
+        "subdir": "fdi",
+    },
+    "fdi_quarterly": {
+        "url": "https://geostat.ge/media/77525/FDI_by_Quarters_Eng.xlsx",
+        "description": "FDI by Quarters (English)",
+        "subdir": "fdi",
+    },
 }
 
 # GeoStat also exposes an XLSX→CSV conversion endpoint
@@ -198,14 +214,16 @@ def _retry_download(url: str, retries: int = MAX_RETRIES) -> requests.Response:
             time.sleep(wait)
 
 
-def download_xlsx(key: str, out_dir: Path) -> Path:
+def download_xlsx(key: str, out_dir: Path, force: bool = False) -> Path:
     """Download a single XLSX file and return the local path."""
     meta = DATASETS[key]
     url = meta["url"]
     filename = url.rsplit("/", 1)[-1]
-    dest = out_dir / filename
+    target_dir = out_dir / meta.get("subdir", "")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    dest = target_dir / filename
 
-    if dest.exists():
+    if dest.exists() and not force:
         log.info("Already downloaded: %s", dest)
         return dest
 
@@ -292,6 +310,11 @@ def main():
         action="store_true",
         help="Only download import datasets",
     )
+    dl.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-download even if files already exist",
+    )
 
     # preview
     pv = sub.add_parser("preview", help="Download and preview a dataset")
@@ -326,7 +349,7 @@ def main():
         for key in keys:
             try:
                 if args.format in ("xlsx", "both"):
-                    download_xlsx(key, out_dir)
+                    download_xlsx(key, out_dir, force=args.force)
                 if args.format in ("csv", "both"):
                     download_csv(key, out_dir)
             except requests.RequestException as exc:
