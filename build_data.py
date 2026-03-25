@@ -323,13 +323,79 @@ def compute_hs4_ytd(filename):
 
             products[code_str]["prev"] = round(prev_sum, 2)
 
+    return current_year, latest_month_idx + 1, products
+
+
+def compute_hs4_ytd_with_reexport(export_file, domestic_file):
+    """Compute HS4 export YTD with re-export share from domestic export data."""
+    result = compute_hs4_ytd(export_file)
+    if result is None:
+        return None
+
+    current_year, month, products = result
+
+    # Read domestic export 2026 sheet to get domestic YTD per product
+    import openpyxl
+
+    month_names = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    ]
+
+    wb = openpyxl.load_workbook(DATA_DIR / domestic_file, read_only=True)
+    year_sheets = [s for s in wb.sheetnames if s.rstrip("*").strip().isdigit()]
+    wb.close()
+
+    if year_sheets:
+        df_dom = load(domestic_file, year_sheets[0])
+        dom_month_row = df_dom.iloc[4, 2:].tolist()
+        dom_col_map = {}
+        for j, cell in enumerate(dom_month_row):
+            m = str(cell).strip() if pd.notna(cell) else ""
+            if m in month_names:
+                dom_col_map[j] = m
+
+        for i in range(5, len(df_dom)):
+            code = df_dom.iloc[i, 0]
+            if pd.isna(code):
+                continue
+            try:
+                code_int = int(float(code))
+            except (ValueError, TypeError):
+                continue
+
+            code_str = f"{code_int:04d}"
+            dom_sum = 0.0
+            for j, _month in dom_col_map.items():
+                v = df_dom.iloc[i, j + 2]
+                try:
+                    val = float(v) if pd.notna(v) else 0
+                except (ValueError, TypeError):
+                    val = 0
+                dom_sum += val
+
+            if code_str in products and products[code_str]["cur"] > 0:
+                total = products[code_str]["cur"]
+                reexport = total - dom_sum
+                share = round(reexport / total * 100, 1) if total > 0 else 0
+                products[code_str]["re"] = max(0, share)
+
+    # Products with total export > 0 but no domestic entry are 100% re-export
+    for code_str, p in products.items():
+        if "re" not in p and p["cur"] > 0:
+            p["re"] = 100.0
+
+    product_list = []
+    for k, v in products.items():
+        entry = {"c": k, "n": v["n"], "cur": v["cur"], "prev": v["prev"]}
+        if "re" in v:
+            entry["re"] = v["re"]
+        product_list.append(entry)
+
     return {
         "year": current_year,
-        "month": latest_month_idx + 1,
-        "products": [
-            {"c": k, "n": v["n"], "cur": v["cur"], "prev": v["prev"]}
-            for k, v in products.items()
-        ],
+        "month": month,
+        "products": product_list,
     }
 
 
@@ -458,8 +524,11 @@ def main():
     print("Processing HS4 imports...")
     hs4_imp_years, hs4_imp = extract_hs4("Import-Product-by-4-digit-2015-2026.xlsx")
 
-    print("Computing HS4 export YTD...")
-    hs4_exp_ytd = compute_hs4_ytd("Export-Product-by-4-digit-2015-2026.xlsx")
+    print("Computing HS4 export YTD with re-export share...")
+    hs4_exp_ytd = compute_hs4_ytd_with_reexport(
+        "Export-Product-by-4-digit-2015-2026.xlsx",
+        "Domestic-Exports_by-4-digit-2014-2026.xlsx",
+    )
 
     print("Processing FDI by country...")
     fdi_years, fdi_countries, fdi_total = extract_fdi_countries("FDI_Eng-countries.xlsx")

@@ -43,6 +43,10 @@ DATASETS = {
         "url": "https://geostat.ge/media/77621/Export-Product-by-4-digit-2015-2026.xlsx",
         "description": "Exports by HS 4-digit (2015-2026)",
     },
+    "domestic_export_hs4": {
+        "url": "https://geostat.ge/media/77607/Domestic-Exports_by-4-digit-2014-2026.xlsx",
+        "description": "Domestic exports by HS 4-digit (2014-2026)",
+    },
     "export_hs4_2000": {
         "url": "https://geostat.ge/media/51582/Export-Product-by-4-digit-2000-2014.xlsx",
         "description": "Exports by HS 4-digit (2000-2014)",

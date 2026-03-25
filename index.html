@@ -363,7 +363,8 @@ function renderSummary(code){
     document.getElementById('ep-body').innerHTML=prods.map(p=>{
       const chg=pct2(p.cur,p.prev);
       const cls=p.cur>=p.prev?'pos':'neg';
-      return `<tr><td style="text-align:left">${p.n}</td><td>${fmtExp(p.cur)}</td><td class="${cls}">${chg}</td><td>-</td></tr>`;
+      const re=p.re!=null?Math.round(p.re)+'%':'-';
+      return `<tr><td style="text-align:left">${p.n}</td><td>${fmtExp(p.cur)}</td><td class="${cls}">${chg}</td><td>${re}</td></tr>`;
     }).join('');
 
     document.getElementById('export-products').style.display='block';

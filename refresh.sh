@@ -12,7 +12,7 @@ echo "[$(date)] Starting GeoStat data refresh..."
 
 python3 geostat_scraper.py download \
   export_by_country import_by_country \
-  export_hs4_2015 import_hs4_2015 \
+  export_hs4_2015 import_hs4_2015 domestic_export_hs4 \
   fdi_by_country fdi_by_sector fdi_quarterly \
   --force
 
