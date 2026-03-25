@@ -58,6 +58,24 @@ footer a{color:#2563eb;text-decoration:none}
 
   <!-- TRADE TAB -->
   <div id="tab-trade" class="tab-content active">
+    <div id="summary-table" class="sec" style="display:none">
+      <h2>Georgia &ndash; External Trade Overview</h2>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th id="sm-mh1"></th>
+            <th id="sm-mh2"></th>
+            <th>Change</th>
+            <th id="sm-yh1"></th>
+            <th id="sm-yh2"></th>
+            <th>Change</th>
+          </tr>
+        </thead>
+        <tbody id="sm-body"></tbody>
+      </table>
+      <p class="note">Thousand USD</p>
+    </div>
     <div class="controls">
       <div class="cg">
         <label for="cs">Country</label>
@@ -134,6 +152,13 @@ footer a{color:#2563eb;text-decoration:none}
 <script>
 let D=null,charts={};
 const fmt=v=>v==null?'-':v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function pct2(a,b){
+  if(!b)return'-';
+  const p=(a-b)/Math.abs(b)*100;
+  const r=Math.round(p);
+  const s=(r===0&&p!==0)?p.toFixed(1):String(r);
+  return(p>=0?'+':'')+s+'%';
+}
 const pct=(a,b)=>{if(!b)return'-';const p=(a-b)/Math.abs(b)*100;return(p>=0?'+':'')+p.toFixed(1)+'%'};
 
 function switchTab(t){
@@ -153,6 +178,7 @@ function switchTab(t){
     const o=document.createElement('option');
     o.value=c.c;o.textContent=c.n;sel.appendChild(o);
   });
+  renderSummary();
 })();
 
 function dc(id){if(charts[id]){charts[id].destroy();charts[id]=null}}
@@ -176,6 +202,67 @@ function hbar(id,labels,values,color,unit){
     plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.x)+' '+(unit||'Thsd. USD')}}},
     scales:{x:{ticks:{callback:v=>v.toLocaleString()}}}
   });
+}
+
+// =================== SUMMARY TABLE ===================
+function renderSummary(){
+  const em=D.total_exp_monthly, im=D.total_imp_monthly;
+  const mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Find latest available month: scan years descending, months descending
+  let latestYr=null, latestMo=null;
+  const yrs=Object.keys(em).map(Number).sort((a,b)=>b-a);
+  for(const yr of yrs){
+    for(let mi=11;mi>=0;mi--){
+      if(em[String(yr)]&&em[String(yr)][mn[mi]]){
+        latestYr=yr; latestMo=mn[mi]; break;
+      }
+    }
+    if(latestYr)break;
+  }
+  if(!latestYr)return;
+
+  const prevMonYr=latestYr-1;
+  const moShort=latestMo.slice(0,3);
+
+  // Monthly values
+  const curExpM=(em[String(latestYr)]||{})[latestMo]||0;
+  const curImpM=(im[String(latestYr)]||{})[latestMo]||0;
+  const prevExpM=(em[String(prevMonYr)]||{})[latestMo]||0;
+  const prevImpM=(im[String(prevMonYr)]||{})[latestMo]||0;
+
+  // Yearly values: last year in the yearly array and the one before it
+  const lastYrIdx=D.years.length-1;
+  const prevFullYr=D.years[lastYrIdx];
+  const prevPrevYr=D.years[lastYrIdx-1];
+  const yi=lastYrIdx;
+  const yi2=lastYrIdx-1;
+  const curExpY=yi>=0?D.total_exp_yearly[yi]:0;
+  const curImpY=yi>=0?D.total_imp_yearly[yi]:0;
+  const prevExpY=yi2>=0?D.total_exp_yearly[yi2]:0;
+  const prevImpY=yi2>=0?D.total_imp_yearly[yi2]:0;
+
+  // Headers
+  document.getElementById('sm-mh1').textContent=moShort+' '+prevMonYr;
+  document.getElementById('sm-mh2').textContent=moShort+' '+latestYr;
+  document.getElementById('sm-yh1').textContent=String(prevPrevYr);
+  document.getElementById('sm-yh2').textContent=String(prevFullYr);
+
+  // Rows: Turnover, Export, Import, Balance
+  const rows=[
+    ['Trade Turnover', prevExpM+prevImpM, curExpM+curImpM, prevExpY+prevImpY, curExpY+curImpY],
+    ['Export', prevExpM, curExpM, prevExpY, curExpY],
+    ['Import', prevImpM, curImpM, prevImpY, curImpY],
+    ['Balance', prevExpM-prevImpM, curExpM-curImpM, prevExpY-prevImpY, curExpY-curImpY],
+  ];
+
+  document.getElementById('sm-body').innerHTML=rows.map(([name,pm,cm,py,cy])=>{
+    const mChg=pct2(cm,pm), yChg=pct2(cy,py);
+    const mCls=cm>=pm?'pos':'neg', yCls=cy>=py?'pos':'neg';
+    return `<tr><td><b>${name}</b></td><td>${fmt(pm)}</td><td>${fmt(cm)}</td><td class="${mCls}">${mChg}</td><td>${fmt(py)}</td><td>${fmt(cy)}</td><td class="${yCls}">${yChg}</td></tr>`;
+  }).join('');
+
+  document.getElementById('summary-table').style.display='block';
 }
 
 // =================== TRADE ===================

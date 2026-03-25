@@ -276,9 +276,46 @@ def main():
         country_list.append({"c": int(code), "n": info["name"]})
     country_list.sort(key=lambda x: x["n"])
 
+    # Compute aggregate totals across all countries
+    n_years = len(exp_years)
+    total_exp_yearly = [0.0] * n_years
+    for v in exp_countries.values():
+        for i, val in enumerate(v["values"]):
+            total_exp_yearly[i] += val
+    total_exp_yearly = [round(v, 2) for v in total_exp_yearly]
+
+    total_imp_yearly = [0.0] * n_years
+    for v in imp_countries.values():
+        for i, val in enumerate(v["values"]):
+            total_imp_yearly[i] += val
+    total_imp_yearly = [round(v, 2) for v in total_imp_yearly]
+
+    # Aggregate monthly totals
+    total_exp_monthly = {}
+    for cdata in exp_monthly.values():
+        for yr, mdata in cdata.items():
+            total_exp_monthly.setdefault(yr, {})
+            for m, val in mdata.items():
+                total_exp_monthly[yr][m] = round(
+                    total_exp_monthly[yr].get(m, 0) + val, 2
+                )
+
+    total_imp_monthly = {}
+    for cdata in imp_monthly.values():
+        for yr, mdata in cdata.items():
+            total_imp_monthly.setdefault(yr, {})
+            for m, val in mdata.items():
+                total_imp_monthly[yr][m] = round(
+                    total_imp_monthly[yr].get(m, 0) + val, 2
+                )
+
     trade = {
         "countries": country_list,
         "years": exp_years,
+        "total_exp_yearly": total_exp_yearly,
+        "total_imp_yearly": total_imp_yearly,
+        "total_exp_monthly": total_exp_monthly,
+        "total_imp_monthly": total_imp_monthly,
         "export": {k: v["values"] for k, v in exp_countries.items()},
         "import": {k: v["values"] for k, v in imp_countries.items()},
         "exp_monthly": exp_monthly,
