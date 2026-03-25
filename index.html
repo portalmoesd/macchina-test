@@ -353,9 +353,10 @@ function renderSummary(code){
 
     prods=prods.slice(0,15);
 
+    // p.cur is in thousands USD; display as millions
     const fmtExp=v=>{
       const m=v/1000;
-      if(m<0.01)return Math.round(v*1000).toLocaleString('en-US');
+      if(m<0.01&&v>0)return'< 0.01';
       return m.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     };
 
