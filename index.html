@@ -59,7 +59,7 @@ footer a{color:#2563eb;text-decoration:none}
   <!-- TRADE TAB -->
   <div id="tab-trade" class="tab-content active">
     <div id="summary-table" class="sec" style="display:none">
-      <h2>Georgia &ndash; External Trade Overview</h2>
+      <h2 id="sm-title">Georgia &ndash; External Trade Overview</h2>
       <table>
         <thead>
           <tr>
@@ -75,20 +75,9 @@ footer a{color:#2563eb;text-decoration:none}
     <div class="controls">
       <div class="cg">
         <label for="cs">Country</label>
-        <select id="cs"><option value="">Loading...</option></select>
+        <select id="cs"><option value="">-- All Countries (Georgia Total) --</option></select>
       </div>
       <button onclick="goTrade()">Generate Report</button>
-    </div>
-    <div id="loading"><div class="spin"></div><p>Loading data...</p></div>
-    <div id="trade-report" style="display:none">
-      <div class="sec">
-        <h2 id="rt">Georgia &ndash; </h2>
-        <table>
-          <thead><tr><th></th><th id="th1"></th><th id="th2"></th><th>Change</th></tr></thead>
-          <tbody id="stb"></tbody>
-        </table>
-        <p class="note">Thousand USD</p>
-      </div>
     </div>
   </div>
 
@@ -167,62 +156,67 @@ function hbar(id,labels,values,color,unit){
 
 // =================== SUMMARY TABLE ===================
 const fmtM=v=>(v/1000).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function smCell(val,chg,isBalance){
-  const mln=fmtM(val);
+function smCell(val,cur,prev,isBalance){
   if(isBalance){
     const sign=val<0?'Negative ':'Positive ';
     return `<td><span style="color:${val<0?'#dc2626':'#16a34a'}">${sign}${fmtM(Math.abs(val))} Mln. USD</span></td>`;
   }
-  const p=pct2(chg[0],chg[1]);
-  const up=chg[0]>=chg[1];
-  return `<td>${mln} Mln. USD, <span class="${up?'pos':'neg'}">${up?'Growth':'Decline'} ${p}</span></td>`;
+  const p=pct2(cur,prev);
+  const up=cur>=prev;
+  return `<td>${fmtM(val)} Mln. USD, <span class="${up?'pos':'neg'}">${up?'Growth':'Decline'} ${p}</span></td>`;
 }
 
-function renderSummary(){
-  const em=D.total_exp_monthly, im=D.total_imp_monthly;
-  const mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-  // Find latest available month
-  let latestYr=null, latestMo=null;
-  const yrs=Object.keys(em).map(Number).sort((a,b)=>b-a);
-  for(const yr of yrs){
+function latestMonth(em){
+  let latestYr=null,latestMo=null;
+  for(const yr of Object.keys(em).map(Number).sort((a,b)=>b-a)){
     for(let mi=11;mi>=0;mi--){
       if(em[String(yr)]?.[mn[mi]]){latestYr=yr;latestMo=mn[mi];break}
     }
     if(latestYr)break;
   }
+  return {latestYr,latestMo};
+}
+
+function renderSummary(code){
+  const isTotal=!code;
+  const em=isTotal?D.total_exp_monthly:(D.exp_monthly[code]||{});
+  const im=isTotal?D.total_imp_monthly:(D.imp_monthly[code]||{});
+
+  const {latestYr,latestMo}=latestMonth(em);
   if(!latestYr)return;
 
   const prevMonYr=latestYr-1;
   const moNum=String(mn.indexOf(latestMo)+1).padStart(2,'0');
 
-  // Monthly values (current month vs same month prev year)
   const curExpM=(em[String(latestYr)]||{})[latestMo]||0;
   const curImpM=(im[String(latestYr)]||{})[latestMo]||0;
   const prevExpM=(em[String(prevMonYr)]||{})[latestMo]||0;
   const prevImpM=(im[String(prevMonYr)]||{})[latestMo]||0;
 
-  // Yearly: last two complete years
   const li=D.years.length-1;
-  const curExpY=D.total_exp_yearly[li]||0;
-  const curImpY=D.total_imp_yearly[li]||0;
-  const prevExpY=D.total_exp_yearly[li-1]||0;
-  const prevImpY=D.total_imp_yearly[li-1]||0;
-  const fullYr=D.years[li], prevFullYr=D.years[li-1];
+  const curExpY =isTotal?D.total_exp_yearly[li]   :(D.export[code]?.[li]||0);
+  const curImpY =isTotal?D.total_imp_yearly[li]   :(D.import[code]?.[li]||0);
+  const prevExpY=isTotal?D.total_exp_yearly[li-1] :(D.export[code]?.[li-1]||0);
+  const prevImpY=isTotal?D.total_imp_yearly[li-1] :(D.import[code]?.[li-1]||0);
 
-  document.getElementById('sm-yh').textContent=String(fullYr);
+  const title=isTotal
+    ?'Georgia \u2013 External Trade Overview'
+    :'Georgia \u2013 '+(D.countries.find(c=>c.c==code)?.n||code);
+  document.getElementById('sm-title').textContent=title;
+  document.getElementById('sm-yh').textContent=String(D.years[li])+(D.years[li]>=2025?'*':'');
   document.getElementById('sm-mh').textContent=latestYr+'.'+moNum;
 
   const rows=[
-    {n:'Trade Turnover',yv:curExpY+curImpY,yp:prevExpY+prevImpY,mv:curExpM+curImpM,mp:prevExpM+prevImpM,bal:false},
-    {n:'Export',        yv:curExpY,         yp:prevExpY,         mv:curExpM,         mp:prevExpM,         bal:false},
-    {n:'Import',        yv:curImpY,         yp:prevImpY,         mv:curImpM,         mp:prevImpM,         bal:false},
-    {n:'Balance',       yv:curExpY-curImpY, yp:null,             mv:curExpM-curImpM, mp:null,             bal:true},
+    {n:'Trade Turnover',yv:curExpY+curImpY, yp:prevExpY+prevImpY, mv:curExpM+curImpM, mp:prevExpM+prevImpM, bal:false},
+    {n:'Export',        yv:curExpY,          yp:prevExpY,          mv:curExpM,          mp:prevExpM,          bal:false},
+    {n:'Import',        yv:curImpY,          yp:prevImpY,          mv:curImpM,          mp:prevImpM,          bal:false},
+    {n:'Balance',       yv:curExpY-curImpY,  yp:null,              mv:curExpM-curImpM,  mp:null,              bal:true},
   ];
 
   document.getElementById('sm-body').innerHTML=rows.map(r=>
-    `<tr><td><b>${r.n}</b></td>${smCell(r.yv,[r.yv,r.yp],r.bal)}${smCell(r.mv,[r.mv,r.mp],r.bal)}</tr>`
+    `<tr><td><b>${r.n}</b></td>${smCell(r.yv,r.yv,r.yp,r.bal)}${smCell(r.mv,r.mv,r.mp,r.bal)}</tr>`
   ).join('');
 
   document.getElementById('summary-table').style.display='block';
@@ -230,34 +224,9 @@ function renderSummary(){
 
 // =================== TRADE ===================
 function goTrade(){
-  const code=document.getElementById('cs').value;
-  if(!code||!D){alert('Please select a country');return}
-  document.getElementById('trade-report').style.display='none';
-  document.getElementById('loading').style.display='flex';
-  setTimeout(()=>{try{renderTrade(code)}catch(e){alert('Error: '+e.message);console.error(e)}
-    document.getElementById('loading').style.display='none'},50);
-}
-
-function renderTrade(code){
-  const exp=D.export[code]||[];
-  const imp=D.import[code]||[];
-  const li=D.years.length-1, pi=li-1;
-  const name=D.countries.find(c=>c.c==code)?.n||code;
-
-  const le=exp[li]||0, pe=exp[pi]||0;
-  const li2=imp[li]||0, pi2=imp[pi]||0;
-  const lt=le+li2, pt=pe+pi2;
-  const lb=le-li2, pb=pe-pi2;
-
-  document.getElementById('rt').textContent='Georgia \u2013 '+name;
-  document.getElementById('th1').textContent=D.years[pi];
-  document.getElementById('th2').textContent=String(D.years[li])+(D.years[li]>=2025?'*':'');
-
-  document.getElementById('stb').innerHTML=[
-    ['Turnover',pt,lt],['Export',pe,le],['Import',pi2,li2],['Balance',pb,lb]
-  ].map(([n,p,c])=>`<tr><td><b>${n}</b></td><td>${fmt(p)}</td><td>${fmt(c)}</td><td class="${c>=p?'pos':'neg'}">${pct2(c,p)}</td></tr>`).join('');
-
-  document.getElementById('trade-report').style.display='block';
+  if(!D)return;
+  const code=document.getElementById('cs').value||null;
+  renderSummary(code);
 }
 
 // =================== FDI ===================
