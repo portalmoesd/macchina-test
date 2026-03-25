@@ -79,6 +79,16 @@ footer a{color:#2563eb;text-decoration:none}
       </table>
       <p class="note">Figures &lt; USD 10,000 shown in full USD; others in millions (m)</p>
     </div>
+    <div id="trade-charts" style="display:none;gap:1rem;margin-top:1rem">
+      <div class="sec" style="flex:1;margin:0">
+        <h2>Trade Turnover</h2>
+        <div class="cc"><canvas id="tc1"></canvas></div>
+      </div>
+      <div class="sec" style="flex:1;margin:0">
+        <h2>Export &amp; Import</h2>
+        <div class="cc"><canvas id="tc2"></canvas></div>
+      </div>
+    </div>
   </div>
 
   <!-- FDI TAB -->
@@ -235,6 +245,65 @@ function renderSummary(code){
   ).join('');
 
   document.getElementById('summary-table').style.display='block';
+
+  // ---- charts ----
+  const noGrid={grid:{display:false},border:{display:false}};
+  const ttFmt=v=>fmtVal(v);
+
+  // Last 5 full years
+  const nYr=5, yEnd=D.years.length-1, yStart=Math.max(0,yEnd-nYr+1);
+  const ySlice=D.years.slice(yStart,yEnd+1);
+  const expArr=isTotal?D.total_exp_yearly:(D.export[code]||[]);
+  const impArr=isTotal?D.total_imp_yearly:(D.import[code]||[]);
+  const expY=expArr.slice(yStart,yEnd+1);
+  const impY=impArr.slice(yStart,yEnd+1);
+
+  // Cumulative months of current (latest) year
+  const moLabels=[],expM=[],impM=[];
+  if(latestYr){
+    let ce=0,ci=0;
+    for(let i=0;i<=moIdx;i++){
+      ce+=(em[String(latestYr)]||{})[mn[i]]||0;
+      ci+=(im[String(latestYr)]||{})[mn[i]]||0;
+      expM.push(ce); impM.push(ci);
+      moLabels.push(mn[i].slice(0,3));
+    }
+  }
+
+  const labels=[...ySlice.map(String),...moLabels];
+  const nM=moLabels.length;
+  const expData=[...expY,...expM], impData=[...impY,...impM];
+  const turnData=expData.map((e,i)=>e+impData[i]);
+
+  const yrCol='#1e3a5f', moCol='#93c5fd';
+  const expYrCol='#16a34a', expMoCol='#86efac';
+  const impYrCol='#dc2626', impMoCol='#fca5a5';
+  const bgTurn=[...Array(ySlice.length).fill(yrCol),...Array(nM).fill(moCol)];
+  const bgExp=[...Array(ySlice.length).fill(expYrCol),...Array(nM).fill(expMoCol)];
+  const bgImp=[...Array(ySlice.length).fill(impYrCol),...Array(nM).fill(impMoCol)];
+
+  const chartOpts=(showLegend)=>({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:showLegend,position:'top'},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': '+ttFmt(c.parsed.y)}}},
+    scales:{x:{...noGrid},y:{...noGrid,ticks:{callback:v=>fmtVal(v)}}}
+  });
+
+  dc('tc1');
+  charts['tc1']=new Chart(document.getElementById('tc1'),{type:'bar',
+    data:{labels,datasets:[{label:'Turnover',data:turnData,backgroundColor:bgTurn,borderRadius:3}]},
+    options:chartOpts(false)});
+
+  dc('tc2');
+  charts['tc2']=new Chart(document.getElementById('tc2'),{type:'bar',
+    data:{labels,datasets:[
+      {label:'Export',data:expData,backgroundColor:bgExp,borderRadius:3},
+      {label:'Import',data:impData,backgroundColor:bgImp,borderRadius:3}
+    ]},
+    options:chartOpts(true)});
+
+  const ch=document.getElementById('trade-charts');
+  ch.style.display='flex';
 }
 
 // =================== TRADE ===================
