@@ -1,6 +1,6 @@
 #!/bin/bash
-# Monthly data refresh script for GeoStat trade & FDI statistics.
-# Add to crontab:  0 6 5 * * /path/to/refresh.sh
+# Daily data refresh script for GeoStat trade & FDI statistics.
+# Add to crontab:  0 6 * * * /path/to/refresh.sh
 #
 # The script downloads fresh XLSX files, rebuilds data/trade.json,
 # and the static site picks up the changes automatically.
