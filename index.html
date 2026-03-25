@@ -86,7 +86,12 @@ footer a{color:#2563eb;text-decoration:none}
         <div class="cc"><canvas id="tc1"></canvas></div>
       </div>
       <div class="sec" style="flex:1;margin:0">
-        <h2>Export &amp; Import</h2>
+        <h2 style="display:flex;align-items:center;gap:1rem">Export &amp; Import
+          <span style="font-size:.78rem;font-weight:400;display:flex;gap:.7rem;margin-left:.3rem">
+            <span style="display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:10px;height:10px;background:#166534;border-radius:2px"></span>Export</span>
+            <span style="display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:10px;height:10px;background:#dc2626;border-radius:2px"></span>Import</span>
+          </span>
+        </h2>
         <div class="cc"><canvas id="tc2"></canvas></div>
       </div>
     </div>
@@ -280,12 +285,17 @@ function renderSummary(code){
   const turnData=expData.map((e,i)=>e+impData[i]);
 
   const yrCol='#1e3a5f', moCol='#93c5fd';
-  const expYrCol='#16a34a', expMoCol='#86efac';
+  const expYrCol='#166534', expMoCol='#4ade80';
   const impYrCol='#dc2626', impMoCol='#fca5a5';
   const bgTurn=[...Array(ySlice.length).fill(yrCol),...Array(nM).fill(moCol)];
   const bgExp=[...Array(ySlice.length).fill(expYrCol),...Array(nM).fill(expMoCol)];
   const bgImp=[...Array(ySlice.length).fill(impYrCol),...Array(nM).fill(impMoCol)];
 
+  const fmtBar=v=>{
+    const mln=v/1000;
+    if(mln<0.01)return Math.round(v*1000).toLocaleString('en-US');
+    return mln.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  };
   const dlFont={size:9,weight:'600'};
   const chartOpts=(showLegend)=>({
     responsive:true, maintainAspectRatio:false,
@@ -294,7 +304,7 @@ function renderSummary(code){
       legend:{display:showLegend,position:'top'},
       tooltip:{callbacks:{label:c=>c.dataset.label+': '+ttFmt(c.parsed.y)}},
       datalabels:{display:true,anchor:'end',align:'end',offset:-2,font:dlFont,color:'#1e293b',
-        formatter:v=>fmtVal(v),clip:false}
+        formatter:fmtBar,clip:false}
     },
     scales:{x:{...noGrid},y:{display:false}}
   });
@@ -310,7 +320,7 @@ function renderSummary(code){
       {label:'Export',data:expData,backgroundColor:bgExp,borderRadius:3},
       {label:'Import',data:impData,backgroundColor:bgImp,borderRadius:3}
     ]},
-    options:chartOpts(true)});
+    options:chartOpts(false)});
 
   const ch=document.getElementById('trade-charts');
   ch.style.display='flex';
