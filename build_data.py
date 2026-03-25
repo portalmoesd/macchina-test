@@ -50,6 +50,67 @@ def extract_country_yearly(filename, sheet="1995-2025-years"):
     return years, countries
 
 
+def extract_country_monthly_current_year(filename):
+    """Read the current-year sheet (named with a 4-digit year, e.g. '2026').
+
+    Structure:
+      row 3: Code | Countries | <year>* | NaN ...
+      row 4: NaN  | NaN       | Jan-Feb (YTD, skip) | January | February | ...
+      row 5+: country data
+    """
+    import openpyxl
+
+    wb = openpyxl.load_workbook(DATA_DIR / filename, read_only=True)
+    year_sheets = [s for s in wb.sheetnames if s.rstrip("*").strip().isdigit()]
+    wb.close()
+
+    if not year_sheets:
+        return {}
+
+    month_names = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    ]
+    countries = {}
+
+    for sheet in year_sheets:
+        df = load(filename, sheet)
+        year_str = str(df.iloc[3, 2]).replace("*", "").strip()
+        try:
+            year = int(float(year_str))
+        except (ValueError, TypeError):
+            continue
+
+        # Row 4 (index 4): identify columns that hold individual month names
+        month_row = df.iloc[4, 2:].tolist()
+        col_map = {}  # offset from col-index 2 -> month name
+        for j, cell in enumerate(month_row):
+            m = str(cell).strip() if pd.notna(cell) else ""
+            if m in month_names:
+                col_map[j] = m
+
+        for i in range(5, len(df)):
+            code = df.iloc[i, 0]
+            if pd.isna(code):
+                continue
+            try:
+                code_int = int(float(code))
+            except (ValueError, TypeError):
+                continue
+
+            for j, month in col_map.items():
+                v = df.iloc[i, j + 2]
+                try:
+                    val = round(float(v), 2) if pd.notna(v) else 0
+                except (ValueError, TypeError):
+                    val = 0
+                if val == 0:
+                    continue
+                countries.setdefault(str(code_int), {}).setdefault(year, {})[month] = val
+
+    return countries
+
+
 def extract_country_monthly(filename, sheet="1995-2025-months"):
     df = load(filename, sheet)
     year_row = df.iloc[3, 2:].tolist()
@@ -251,9 +312,15 @@ def main():
 
     print("Processing exports by country (monthly)...")
     exp_monthly = extract_country_monthly("Export-Country_1995-2026.xlsx")
+    for code, ydata in extract_country_monthly_current_year("Export-Country_1995-2026.xlsx").items():
+        for yr, mdata in ydata.items():
+            exp_monthly.setdefault(code, {}).setdefault(yr, {}).update(mdata)
 
     print("Processing imports by country (monthly)...")
     imp_monthly = extract_country_monthly("Import-Country-1995-2026.xlsx")
+    for code, ydata in extract_country_monthly_current_year("Import-Country-1995-2026.xlsx").items():
+        for yr, mdata in ydata.items():
+            imp_monthly.setdefault(code, {}).setdefault(yr, {}).update(mdata)
 
     print("Processing HS4 exports...")
     hs4_exp_years, hs4_exp = extract_hs4("Export-Product-by-4-digit-2015-2026.xlsx")
