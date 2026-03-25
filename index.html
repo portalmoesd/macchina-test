@@ -210,15 +210,21 @@ function renderSummary(code){
   document.getElementById('sm-yh').textContent=String(D.years[li])+(D.years[li]>=2025?'*':'');
   document.getElementById('sm-mh').textContent=latestYr+'.'+moNum;
 
+  const yTurn=curExpY+curImpY, mTurn=curExpM+curImpM;
   const rows=[
-    {n:'Trade Turnover',yv:curExpY+curImpY, yp:prevExpY+prevImpY, mv:curExpM+curImpM, mp:prevExpM+prevImpM, bal:false},
-    {n:'Export',        yv:curExpY,          yp:prevExpY,          mv:curExpM,          mp:prevExpM,          bal:false},
-    {n:'Import',        yv:curImpY,          yp:prevImpY,          mv:curImpM,          mp:prevImpM,          bal:false},
-    {n:'Balance',       yv:curExpY-curImpY,  yp:null,              mv:curExpM-curImpM,  mp:null,              bal:true},
+    {n:'Trade Turnover', no:'no trade turnover', yv:yTurn,          yp:prevExpY+prevImpY, mv:mTurn,          mp:prevExpM+prevImpM, bal:false},
+    {n:'Export',         no:'no export',          yv:curExpY,         yp:prevExpY,          mv:curExpM,         mp:prevExpM,          bal:false},
+    {n:'Import',         no:'no import',           yv:curImpY,         yp:prevImpY,          mv:curImpM,         mp:prevImpM,          bal:false},
+    {n:'Balance',        no:null,                  yv:curExpY-curImpY, yp:null,              mv:curExpM-curImpM, mp:null,              bal:true},
   ];
 
+  const cell=(r,v,cur,prev,noTrade)=>{
+    if(r.bal) return noTrade?'<td>-</td>':smCell(v,cur,prev,true);
+    return v===0?`<td>${r.no}</td>`:smCell(v,cur,prev,false);
+  };
+
   document.getElementById('sm-body').innerHTML=rows.map(r=>
-    `<tr><td><b>${r.n}</b></td>${smCell(r.yv,r.yv,r.yp,r.bal)}${smCell(r.mv,r.mv,r.mp,r.bal)}</tr>`
+    `<tr><td><b>${r.n}</b></td>${cell(r,r.yv,r.yv,r.yp,yTurn===0)}${cell(r,r.mv,r.mv,r.mp,mTurn===0)}</tr>`
   ).join('');
 
   document.getElementById('summary-table').style.display='block';
