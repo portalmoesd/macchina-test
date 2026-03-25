@@ -188,12 +188,15 @@ function renderSummary(code){
   if(!latestYr)return;
 
   const prevMonYr=latestYr-1;
-  const moNum=String(mn.indexOf(latestMo)+1).padStart(2,'0');
+  const moIdx=mn.indexOf(latestMo);
+  const moNum=String(moIdx+1).padStart(2,'0');
+  const moRange=mn.slice(0,moIdx+1); // Jan..latestMo
 
-  const curExpM=(em[String(latestYr)]||{})[latestMo]||0;
-  const curImpM=(im[String(latestYr)]||{})[latestMo]||0;
-  const prevExpM=(em[String(prevMonYr)]||{})[latestMo]||0;
-  const prevImpM=(im[String(prevMonYr)]||{})[latestMo]||0;
+  const ytd=(monthly,yr)=>moRange.reduce((s,m)=>s+((monthly[String(yr)]||{})[m]||0),0);
+  const curExpM=ytd(em,latestYr);
+  const curImpM=ytd(im,latestYr);
+  const prevExpM=ytd(em,prevMonYr);
+  const prevImpM=ytd(im,prevMonYr);
 
   const li=D.years.length-1;
   const curExpY =isTotal?D.total_exp_yearly[li]   :(D.export[code]?.[li]||0);
