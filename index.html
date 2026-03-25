@@ -58,8 +58,15 @@ footer a{color:#2563eb;text-decoration:none}
 
   <!-- TRADE TAB -->
   <div id="tab-trade" class="tab-content active">
+    <div class="controls">
+      <div class="cg">
+        <label for="cs">Country</label>
+        <select id="cs"><option value="">-- Select a country --</option></select>
+      </div>
+      <button onclick="goTrade()">Generate Report</button>
+    </div>
     <div id="summary-table" class="sec" style="display:none">
-      <h2 id="sm-title">Georgia &ndash; External Trade Overview</h2>
+      <h2 id="sm-title"></h2>
       <table>
         <thead>
           <tr>
@@ -71,13 +78,6 @@ footer a{color:#2563eb;text-decoration:none}
         <tbody id="sm-body"></tbody>
       </table>
       <p class="note">Million USD</p>
-    </div>
-    <div class="controls">
-      <div class="cg">
-        <label for="cs">Country</label>
-        <select id="cs"><option value="">-- All Countries (Georgia Total) --</option></select>
-      </div>
-      <button onclick="goTrade()">Generate Report</button>
     </div>
   </div>
 
@@ -136,7 +136,6 @@ function switchTab(t){
     const o=document.createElement('option');
     o.value=c.c;o.textContent=c.n;sel.appendChild(o);
   });
-  renderSummary();
 })();
 
 function dc(id){if(charts[id]){charts[id].destroy();charts[id]=null}}
@@ -228,8 +227,9 @@ function renderSummary(code){
 // =================== TRADE ===================
 function goTrade(){
   if(!D)return;
-  const code=document.getElementById('cs').value||null;
-  renderSummary(code);
+  const code=document.getElementById('cs').value;
+  if(!code){alert('Please select a country');return}
+  renderSummary(code||null);
 }
 
 // =================== FDI ===================
