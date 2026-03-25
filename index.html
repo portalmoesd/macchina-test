@@ -64,17 +64,13 @@ footer a{color:#2563eb;text-decoration:none}
         <thead>
           <tr>
             <th></th>
-            <th id="sm-mh1"></th>
-            <th id="sm-mh2"></th>
-            <th>Change</th>
-            <th id="sm-yh1"></th>
-            <th id="sm-yh2"></th>
-            <th>Change</th>
+            <th id="sm-yh"></th>
+            <th id="sm-mh"></th>
           </tr>
         </thead>
         <tbody id="sm-body"></tbody>
       </table>
-      <p class="note">Thousand USD</p>
+      <p class="note">Million USD</p>
     </div>
     <div class="controls">
       <div class="cg">
@@ -205,62 +201,64 @@ function hbar(id,labels,values,color,unit){
 }
 
 // =================== SUMMARY TABLE ===================
+const fmtM=v=>(v/1000).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function smCell(val,chg,isBalance){
+  const mln=fmtM(val);
+  if(isBalance){
+    const sign=val<0?'Negative ':'Positive ';
+    return `<td><span style="color:${val<0?'#dc2626':'#16a34a'}">${sign}${fmtM(Math.abs(val))} Mln. USD</span></td>`;
+  }
+  const p=pct2(chg[0],chg[1]);
+  const up=chg[0]>=chg[1];
+  return `<td>${mln} Mln. USD, <span class="${up?'pos':'neg'}">${up?'Growth':'Decline'} ${p}</span></td>`;
+}
+
 function renderSummary(){
   const em=D.total_exp_monthly, im=D.total_imp_monthly;
   const mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  // Find latest available month: scan years descending, months descending
+  // Find latest available month
   let latestYr=null, latestMo=null;
   const yrs=Object.keys(em).map(Number).sort((a,b)=>b-a);
   for(const yr of yrs){
     for(let mi=11;mi>=0;mi--){
-      if(em[String(yr)]&&em[String(yr)][mn[mi]]){
-        latestYr=yr; latestMo=mn[mi]; break;
-      }
+      if(em[String(yr)]?.[mn[mi]]){latestYr=yr;latestMo=mn[mi];break}
     }
     if(latestYr)break;
   }
   if(!latestYr)return;
 
   const prevMonYr=latestYr-1;
-  const moShort=latestMo.slice(0,3);
+  const moNum=String(mn.indexOf(latestMo)+1).padStart(2,'0');
 
-  // Monthly values
+  // Monthly values (current month vs same month prev year)
   const curExpM=(em[String(latestYr)]||{})[latestMo]||0;
   const curImpM=(im[String(latestYr)]||{})[latestMo]||0;
   const prevExpM=(em[String(prevMonYr)]||{})[latestMo]||0;
   const prevImpM=(im[String(prevMonYr)]||{})[latestMo]||0;
 
-  // Yearly values: last year in the yearly array and the one before it
-  const lastYrIdx=D.years.length-1;
-  const prevFullYr=D.years[lastYrIdx];
-  const prevPrevYr=D.years[lastYrIdx-1];
-  const yi=lastYrIdx;
-  const yi2=lastYrIdx-1;
-  const curExpY=yi>=0?D.total_exp_yearly[yi]:0;
-  const curImpY=yi>=0?D.total_imp_yearly[yi]:0;
-  const prevExpY=yi2>=0?D.total_exp_yearly[yi2]:0;
-  const prevImpY=yi2>=0?D.total_imp_yearly[yi2]:0;
+  // Yearly: last two complete years
+  const li=D.years.length-1;
+  const curExpY=D.total_exp_yearly[li]||0;
+  const curImpY=D.total_imp_yearly[li]||0;
+  const prevExpY=D.total_exp_yearly[li-1]||0;
+  const prevImpY=D.total_imp_yearly[li-1]||0;
+  const fullYr=D.years[li], prevFullYr=D.years[li-1];
 
-  // Headers
-  document.getElementById('sm-mh1').textContent=moShort+' '+prevMonYr;
-  document.getElementById('sm-mh2').textContent=moShort+' '+latestYr;
-  document.getElementById('sm-yh1').textContent=String(prevPrevYr);
-  document.getElementById('sm-yh2').textContent=String(prevFullYr);
+  document.getElementById('sm-yh').textContent=String(fullYr);
+  document.getElementById('sm-mh').textContent=latestYr+'.'+moNum;
 
-  // Rows: Turnover, Export, Import, Balance
   const rows=[
-    ['Trade Turnover', prevExpM+prevImpM, curExpM+curImpM, prevExpY+prevImpY, curExpY+curImpY],
-    ['Export', prevExpM, curExpM, prevExpY, curExpY],
-    ['Import', prevImpM, curImpM, prevImpY, curImpY],
-    ['Balance', prevExpM-prevImpM, curExpM-curImpM, prevExpY-prevImpY, curExpY-curImpY],
+    {n:'Trade Turnover',yv:curExpY+curImpY,yp:prevExpY+prevImpY,mv:curExpM+curImpM,mp:prevExpM+prevImpM,bal:false},
+    {n:'Export',        yv:curExpY,         yp:prevExpY,         mv:curExpM,         mp:prevExpM,         bal:false},
+    {n:'Import',        yv:curImpY,         yp:prevImpY,         mv:curImpM,         mp:prevImpM,         bal:false},
+    {n:'Balance',       yv:curExpY-curImpY, yp:null,             mv:curExpM-curImpM, mp:null,             bal:true},
   ];
 
-  document.getElementById('sm-body').innerHTML=rows.map(([name,pm,cm,py,cy])=>{
-    const mChg=pct2(cm,pm), yChg=pct2(cy,py);
-    const mCls=cm>=pm?'pos':'neg', yCls=cy>=py?'pos':'neg';
-    return `<tr><td><b>${name}</b></td><td>${fmt(pm)}</td><td>${fmt(cm)}</td><td class="${mCls}">${mChg}</td><td>${fmt(py)}</td><td>${fmt(cy)}</td><td class="${yCls}">${yChg}</td></tr>`;
-  }).join('');
+  document.getElementById('sm-body').innerHTML=rows.map(r=>
+    `<tr><td><b>${r.n}</b></td>${smCell(r.yv,[r.yv,r.yp],r.bal)}${smCell(r.mv,[r.mv,r.mp],r.bal)}</tr>`
+  ).join('');
 
   document.getElementById('summary-table').style.display='block';
 }
