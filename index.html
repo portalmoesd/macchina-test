@@ -120,6 +120,7 @@ footer a{color:#2563eb;text-decoration:none}
 
 <script>
 let D=null,charts={};
+Chart.register(ChartDataLabels);
 Chart.defaults.plugins.datalabels={display:false};
 const fmt=v=>v==null?'-':v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 function pct2(a,b){
@@ -269,7 +270,8 @@ function renderSummary(code){
       ci+=(im[String(latestYr)]||{})[mn[i]]||0;
     }
     expM.push(ce); impM.push(ci);
-    moLabels.push(latestYr+' YTD');
+    const ytdLabel=moIdx===0?mn[0].slice(0,3)+' '+latestYr:mn[0].slice(0,3)+'-'+latestMo.slice(0,3)+' '+latestYr;
+    moLabels.push(ytdLabel);
   }
 
   const labels=[...ySlice.map(String),...moLabels];
