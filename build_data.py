@@ -203,6 +203,136 @@ def extract_hs4(filename, sheet="2020-2025-years"):
     return years, products
 
 
+def compute_hs4_ytd(filename):
+    """Compute YTD export/import values per HS4 product for the latest
+    period and the same period of the previous year.
+
+    Returns dict with year, month, and a list of product dicts, or None.
+    """
+    import openpyxl
+
+    month_names = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    ]
+    skip_names = {"Total Exports", "Total Imports", "of which:"}
+
+    wb = openpyxl.load_workbook(DATA_DIR / filename, read_only=True)
+    year_sheets = [s for s in wb.sheetnames if s.rstrip("*").strip().isdigit()]
+    wb.close()
+
+    if not year_sheets:
+        return None
+
+    # --- current-year sheet (e.g. '2026') ---
+    df_cur = load(filename, year_sheets[0])
+    year_str = str(df_cur.iloc[3, 2]).replace("*", "").strip()
+    current_year = int(float(year_str))
+
+    month_row = df_cur.iloc[4, 2:].tolist()
+    cur_col_map = {}
+    for j, cell in enumerate(month_row):
+        m = str(cell).strip() if pd.notna(cell) else ""
+        if m in month_names:
+            cur_col_map[j] = m
+
+    latest_month_idx = max(month_names.index(m) for m in cur_col_map.values())
+    ytd_months = set(month_names[: latest_month_idx + 1])
+
+    products = {}
+    for i in range(5, len(df_cur)):
+        code = df_cur.iloc[i, 0]
+        name = df_cur.iloc[i, 1]
+        if pd.isna(code) or pd.isna(name):
+            continue
+        name_str = str(name).strip()
+        if name_str in skip_names:
+            continue
+        try:
+            code_int = int(float(code))
+        except (ValueError, TypeError):
+            continue
+
+        cur_sum = 0.0
+        for j, month in cur_col_map.items():
+            v = df_cur.iloc[i, j + 2]
+            try:
+                val = float(v) if pd.notna(v) else 0
+            except (ValueError, TypeError):
+                val = 0
+            cur_sum += val
+
+        products[f"{code_int:04d}"] = {
+            "n": name_str,
+            "cur": round(cur_sum, 2),
+            "prev": 0.0,
+        }
+
+    # --- previous-year same-period from monthly sheet ---
+    prev_year = current_year - 1
+    monthly_sheet = None
+    wb2 = openpyxl.load_workbook(DATA_DIR / filename, read_only=True)
+    for s in wb2.sheetnames:
+        if "months" in s.lower() and str(prev_year) in s:
+            monthly_sheet = s
+            break
+    wb2.close()
+
+    if monthly_sheet:
+        df_m = load(filename, monthly_sheet)
+        yr_row = df_m.iloc[3, 2:].tolist()
+        mn_row = df_m.iloc[4, 2:].tolist()
+
+        prev_cols = []
+        cur_yr = None
+        for j_idx, (yr, mn) in enumerate(zip(yr_row, mn_row)):
+            if pd.notna(yr):
+                try:
+                    cur_yr = int(float(str(yr).replace("*", "").strip()))
+                except (ValueError, TypeError):
+                    pass
+            mn_str = str(mn).strip() if pd.notna(mn) else ""
+            if cur_yr == prev_year and mn_str in ytd_months:
+                prev_cols.append(j_idx)
+
+        for i in range(5, len(df_m)):
+            code = df_m.iloc[i, 0]
+            name = df_m.iloc[i, 1]
+            if pd.isna(code) or pd.isna(name):
+                continue
+            name_str = str(name).strip()
+            if name_str in skip_names:
+                continue
+            try:
+                code_int = int(float(code))
+            except (ValueError, TypeError):
+                continue
+
+            code_str = f"{code_int:04d}"
+            if code_str not in products:
+                products[code_str] = {"n": name_str, "cur": 0.0, "prev": 0.0}
+
+            prev_sum = 0.0
+            for j_idx in prev_cols:
+                v = df_m.iloc[i, j_idx + 2]
+                try:
+                    val = float(v) if pd.notna(v) else 0
+                except (ValueError, TypeError):
+                    val = 0
+                prev_sum += val
+
+            products[code_str]["prev"] = round(prev_sum, 2)
+
+    return {
+        "year": current_year,
+        "month": latest_month_idx + 1,
+        "products": [
+            {"c": k, "n": v["n"], "cur": v["cur"], "prev": v["prev"]}
+            for k, v in products.items()
+        ],
+    }
+
+
 def extract_fdi_countries(filename, sheet="FDI (annual)"):
     df = pd.read_excel(DATA_DIR / "fdi" / filename, sheet_name=sheet, header=None)
     years_raw = df.iloc[3, 2:].tolist()
@@ -328,6 +458,9 @@ def main():
     print("Processing HS4 imports...")
     hs4_imp_years, hs4_imp = extract_hs4("Import-Product-by-4-digit-2015-2026.xlsx")
 
+    print("Computing HS4 export YTD...")
+    hs4_exp_ytd = compute_hs4_ytd("Export-Product-by-4-digit-2015-2026.xlsx")
+
     print("Processing FDI by country...")
     fdi_years, fdi_countries, fdi_total = extract_fdi_countries("FDI_Eng-countries.xlsx")
 
@@ -390,6 +523,7 @@ def main():
         "hs4_years": hs4_exp_years,
         "hs4_export": hs4_exp,
         "hs4_import": hs4_imp,
+        "hs4_exp_ytd": hs4_exp_ytd,
         "fdi_years": fdi_years,
         "fdi_countries": {k: v["values"] for k, v in fdi_countries.items()},
         "fdi_country_names": {k: v["name"] for k, v in fdi_countries.items()},

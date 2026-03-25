@@ -95,6 +95,20 @@ footer a{color:#2563eb;text-decoration:none}
         <div class="cc"><canvas id="tc2"></canvas></div>
       </div>
     </div>
+    <div id="export-products" class="sec" style="display:none">
+      <h2 id="ep-title">Main Export Products</h2>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left">Product</th>
+            <th>Export<br><span style="font-weight:400;font-size:.75rem">Mln. USD</span></th>
+            <th>Change<br><span style="font-weight:400;font-size:.75rem">%</span></th>
+            <th>Re-export share<br><span style="font-weight:400;font-size:.75rem">%</span></th>
+          </tr>
+        </thead>
+        <tbody id="ep-body"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- FDI TAB -->
@@ -324,6 +338,35 @@ function renderSummary(code){
 
   const ch=document.getElementById('trade-charts');
   ch.style.display='flex';
+
+  // ---- export products table ----
+  const ytdData=D.hs4_exp_ytd;
+  if(ytdData){
+    const minMln=0.01; // threshold in millions
+    const minThsd=minMln*1000; // in thousands
+
+    let prods=[...ytdData.products].filter(p=>p.cur>0).sort((a,b)=>b.cur-a.cur);
+
+    // Filter: remove < 0.01 Mln unless fewer than 5 remain
+    const big=prods.filter(p=>p.cur>=minThsd);
+    if(big.length>=5) prods=big;
+
+    prods=prods.slice(0,15);
+
+    const fmtExp=v=>{
+      const m=v/1000;
+      if(m<0.01)return Math.round(v*1000).toLocaleString('en-US');
+      return m.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    };
+
+    document.getElementById('ep-body').innerHTML=prods.map(p=>{
+      const chg=pct2(p.cur,p.prev);
+      const cls=p.cur>=p.prev?'pos':'neg';
+      return `<tr><td style="text-align:left">${p.n}</td><td>${fmtExp(p.cur)}</td><td class="${cls}">${chg}</td><td>-</td></tr>`;
+    }).join('');
+
+    document.getElementById('export-products').style.display='block';
+  }
 }
 
 // =================== TRADE ===================
