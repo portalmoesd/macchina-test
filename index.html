@@ -258,16 +258,16 @@ function renderSummary(code){
   const expY=expArr.slice(yStart,yEnd+1);
   const impY=impArr.slice(yStart,yEnd+1);
 
-  // Cumulative months of current (latest) year
+  // Single YTD bar for current year
   const moLabels=[],expM=[],impM=[];
   if(latestYr){
     let ce=0,ci=0;
     for(let i=0;i<=moIdx;i++){
       ce+=(em[String(latestYr)]||{})[mn[i]]||0;
       ci+=(im[String(latestYr)]||{})[mn[i]]||0;
-      expM.push(ce); impM.push(ci);
-      moLabels.push(mn[i].slice(0,3));
     }
+    expM.push(ce); impM.push(ci);
+    moLabels.push(latestYr+' YTD');
   }
 
   const labels=[...ySlice.map(String),...moLabels];
