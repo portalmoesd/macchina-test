@@ -77,7 +77,7 @@ footer a{color:#2563eb;text-decoration:none}
         </thead>
         <tbody id="sm-body"></tbody>
       </table>
-      <p class="note">Million USD</p>
+      <p class="note">Figures &lt; USD 10,000 shown in full USD; others in millions (m)</p>
     </div>
   </div>
 
@@ -154,17 +154,24 @@ function hbar(id,labels,values,color,unit){
 }
 
 // =================== SUMMARY TABLE ===================
-const fmtM=v=>(v/1000).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// val is in thousands USD
+function fmtVal(thsd){
+  const mln=thsd/1000;
+  if(mln<0.01)
+    return 'USD '+Math.round(thsd*1000).toLocaleString('en-US');
+  return 'USD '+mln.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' m';
+}
 
 function smCell(val,cur,prev,isBalance){
   if(isBalance){
     const sign=val<0?'Negative ':'Positive ';
-    return `<td><span style="color:${val<0?'#dc2626':'#16a34a'}">${sign}${fmtM(Math.abs(val))} Mln. USD</span></td>`;
+    return `<td><span style="color:${val<0?'#dc2626':'#16a34a'}">${sign}${fmtVal(Math.abs(val))}</span></td>`;
   }
   const p=pct2(cur,prev);
   const up=cur>=prev;
-  return `<td>${fmtM(val)} Mln. USD, <span class="${up?'pos':'neg'}">${up?'Growth':'Decline'} ${p}</span></td>`;
+  return `<td>${fmtVal(val)}, <span class="${up?'pos':'neg'}">${up?'Growth':'Decline'} ${p}</span></td>`;
 }
 
 function latestMonth(em){
