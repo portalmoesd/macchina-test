@@ -77,15 +77,6 @@ footer a{color:#2563eb;text-decoration:none}
         <label for="cs">Country</label>
         <select id="cs"><option value="">Loading...</option></select>
       </div>
-      <div class="cg">
-        <label for="ps">Period</label>
-        <select id="ps">
-          <option value="5" selected>Last 5 Years</option>
-          <option value="10">Last 10 Years</option>
-          <option value="20">Last 20 Years</option>
-          <option value="0">All Available</option>
-        </select>
-      </div>
       <button onclick="goTrade()">Generate Report</button>
     </div>
     <div id="loading"><div class="spin"></div><p>Loading data...</p></div>
@@ -97,24 +88,6 @@ footer a{color:#2563eb;text-decoration:none}
           <tbody id="stb"></tbody>
         </table>
         <p class="note">Thousand USD</p>
-      </div>
-      <div class="sec"><h2>Trade Turnover</h2><div class="cc"><canvas id="c1"></canvas></div></div>
-      <div class="sec"><h2>Export vs Import</h2><div class="cc"><canvas id="c2"></canvas></div></div>
-      <div class="sec"><h2>Trade Balance</h2><div class="cc"><canvas id="c3"></canvas></div></div>
-      <div class="sec"><h2 id="mh">Monthly Breakdown</h2><div class="cc"><canvas id="c4"></canvas></div></div>
-      <div class="sec">
-        <h2>Yearly Trade Data</h2>
-        <div class="ts"><table><thead><tr id="yh"></tr></thead><tbody id="yb"></tbody></table></div>
-      </div>
-      <div class="sec">
-        <h2>Top Export Products (HS 4-digit, Georgia Total)</h2>
-        <div class="cc" style="height:380px"><canvas id="c5"></canvas></div>
-        <div class="ts"><table><thead><tr id="eh"></tr></thead><tbody id="eb"></tbody></table></div>
-      </div>
-      <div class="sec">
-        <h2>Top Import Products (HS 4-digit, Georgia Total)</h2>
-        <div class="cc" style="height:380px"><canvas id="c6"></canvas></div>
-        <div class="ts"><table><thead><tr id="ih"></tr></thead><tbody id="ib"></tbody></table></div>
       </div>
     </div>
   </div>
@@ -182,14 +155,6 @@ function dc(id){if(charts[id]){charts[id].destroy();charts[id]=null}}
 function mkChart(id,type,data,opts){
   dc(id);
   charts[id]=new Chart(document.getElementById(id),{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});
-}
-
-function bar(id,labels,datasets,opts){
-  mkChart(id,'bar',{labels,datasets},{
-    plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.parsed.y)+' Thsd. USD'}}},
-    scales:{x:{stacked:!!opts?.stacked},y:{stacked:!!opts?.stacked,ticks:{callback:v=>v.toLocaleString()}}},
-    ...opts
-  });
 }
 
 function hbar(id,labels,values,color,unit){
@@ -267,86 +232,32 @@ function renderSummary(){
 function goTrade(){
   const code=document.getElementById('cs').value;
   if(!code||!D){alert('Please select a country');return}
-  const period=+document.getElementById('ps').value;
   document.getElementById('trade-report').style.display='none';
   document.getElementById('loading').style.display='flex';
-  setTimeout(()=>{try{renderTrade(code,period)}catch(e){alert('Error: '+e.message);console.error(e)}
+  setTimeout(()=>{try{renderTrade(code)}catch(e){alert('Error: '+e.message);console.error(e)}
     document.getElementById('loading').style.display='none'},50);
 }
 
-function renderTrade(code,period){
+function renderTrade(code){
   const exp=D.export[code]||[];
   const imp=D.import[code]||[];
-  const allYears=D.years;
+  const li=D.years.length-1, pi=li-1;
   const name=D.countries.find(c=>c.c==code)?.n||code;
 
-  let startIdx=0;
-  if(period>0)startIdx=Math.max(0,allYears.length-period);
-  const years=allYears.slice(startIdx);
-  const ev=exp.slice(startIdx);
-  const iv=imp.slice(startIdx);
+  const le=exp[li]||0, pe=exp[pi]||0;
+  const li2=imp[li]||0, pi2=imp[pi]||0;
+  const lt=le+li2, pt=pe+pi2;
+  const lb=le-li2, pb=pe-pi2;
 
   document.getElementById('rt').textContent='Georgia \u2013 '+name;
-
-  const li=years.length-1,pi=li-1;
-  const le=ev[li]||0,pe=ev[pi]||0,li2=iv[li]||0,pi2=iv[pi]||0;
-  const lt=le+li2,pt=pe+pi2,lb=le-li2,pb=pe-pi2;
-  document.getElementById('th1').textContent=years[pi];
-  document.getElementById('th2').textContent=years[li]+(years[li]>=2025?'*':'');
+  document.getElementById('th1').textContent=D.years[pi];
+  document.getElementById('th2').textContent=String(D.years[li])+(D.years[li]>=2025?'*':'');
 
   document.getElementById('stb').innerHTML=[
     ['Turnover',pt,lt],['Export',pe,le],['Import',pi2,li2],['Balance',pb,lb]
-  ].map(([n,p,c])=>`<tr><td><b>${n}</b></td><td>${fmt(p)}</td><td>${fmt(c)}</td><td class="${c>=p?'pos':'neg'}">${pct(c,p)}</td></tr>`).join('');
-
-  const yl=years.map(String);
-  const turnover=ev.map((e,i)=>e+(iv[i]||0));
-  const balance=ev.map((e,i)=>e-(iv[i]||0));
-
-  bar('c1',yl,[{label:'Turnover',data:turnover,backgroundColor:'#2563eb',borderRadius:4}]);
-  bar('c2',yl,[
-    {label:'Export',data:[...ev],backgroundColor:'#16a34a',borderRadius:4},
-    {label:'Import',data:[...iv],backgroundColor:'#dc2626',borderRadius:4}
-  ]);
-  mkChart('c3','bar',{labels:yl,datasets:[{label:'Balance',data:balance,
-    backgroundColor:balance.map(v=>v>=0?'#16a34a':'#dc2626'),borderRadius:4}]},{
-    plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>'Balance: '+fmt(c.parsed.y)+' Thsd. USD'}}},
-    scales:{y:{ticks:{callback:v=>v.toLocaleString()}}}
-  });
-
-  const mExp=D.exp_monthly?.[code]||{};
-  const mImp=D.imp_monthly?.[code]||{};
-  const latestFullYear=years[li]>=2026&&li>0?years[li-1]:years[li];
-  document.getElementById('mh').textContent='Monthly Breakdown ('+latestFullYear+')';
-  const mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  bar('c4',mn.map(m=>m.slice(0,3)),[
-    {label:'Export',data:mn.map(m=>(mExp[latestFullYear]||{})[m]||0),backgroundColor:'#16a34a',borderRadius:3},
-    {label:'Import',data:mn.map(m=>(mImp[latestFullYear]||{})[m]||0),backgroundColor:'#dc2626',borderRadius:3}
-  ]);
-
-  document.getElementById('yh').innerHTML='<th>Year</th><th>Turnover</th><th>Export</th><th>Import</th><th>Balance</th>';
-  const yb=document.getElementById('yb');yb.innerHTML='';
-  for(let i=years.length-1;i>=0;i--){
-    const e=ev[i]||0,im=iv[i]||0;
-    yb.innerHTML+=`<tr><td>${years[i]}</td><td>${fmt(e+im)}</td><td>${fmt(e)}</td><td>${fmt(im)}</td><td class="${e>=im?'pos':'neg'}">${fmt(e-im)}</td></tr>`;
-  }
-
-  const hy=D.hs4_years,hli=hy.length-1;
-  const ep=[...D.hs4_export].sort((a,b)=>(b.v[hli]||0)-(a.v[hli]||0));
-  hbar('c5',ep.slice(0,10).map(p=>p.c+' '+p.n.slice(0,35)),ep.slice(0,10).map(p=>p.v[hli]||0),'#16a34a');
-  prodTable('eh','eb',ep.slice(0,15),hy);
-
-  const ip=[...D.hs4_import].sort((a,b)=>(b.v[hli]||0)-(a.v[hli]||0));
-  hbar('c6',ip.slice(0,10).map(p=>p.c+' '+p.n.slice(0,35)),ip.slice(0,10).map(p=>p.v[hli]||0),'#dc2626');
-  prodTable('ih','ib',ip.slice(0,15),hy);
+  ].map(([n,p,c])=>`<tr><td><b>${n}</b></td><td>${fmt(p)}</td><td>${fmt(c)}</td><td class="${c>=p?'pos':'neg'}">${pct2(c,p)}</td></tr>`).join('');
 
   document.getElementById('trade-report').style.display='block';
-}
-
-function prodTable(hid,bid,products,years){
-  document.getElementById(hid).innerHTML='<th>HS</th><th style="text-align:left">Product</th>'+years.map(y=>'<th>'+y+'</th>').join('');
-  document.getElementById(bid).innerHTML=products.map(p=>
-    `<tr><td class="mono">${p.c}</td><td style="text-align:left;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.n}">${p.n.slice(0,50)}</td>${years.map((_,i)=>`<td>${fmt(p.v[i]||0)}</td>`).join('')}</tr>`
-  ).join('');
 }
 
 // =================== FDI ===================
