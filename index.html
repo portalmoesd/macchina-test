@@ -86,8 +86,8 @@ footer a{color:#2563eb;text-decoration:none}
         <div class="cc"><canvas id="tc1"></canvas></div>
       </div>
       <div class="sec" style="flex:1;margin:0">
-        <h2 style="display:flex;align-items:center;gap:1rem">Export &amp; Import
-          <span style="font-size:.78rem;font-weight:400;display:flex;gap:.7rem;margin-left:.3rem">
+        <h2 style="display:flex;align-items:center;justify-content:space-between">Export &amp; Import
+          <span style="font-size:.78rem;font-weight:400;display:flex;flex-direction:column;gap:.25rem;align-items:flex-end">
             <span style="display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:10px;height:10px;background:#166534;border-radius:2px"></span>Export</span>
             <span style="display:flex;align-items:center;gap:.3rem"><span style="display:inline-block;width:10px;height:10px;background:#dc2626;border-radius:2px"></span>Import</span>
           </span>
@@ -296,7 +296,7 @@ function renderSummary(code){
     if(mln<0.01)return Math.round(v*1000).toLocaleString('en-US');
     return mln.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   };
-  const dlFont={size:9,weight:'600'};
+  const dlFont={size:11,weight:'600'};
   const chartOpts=(showLegend)=>({
     responsive:true, maintainAspectRatio:false,
     layout:{padding:{top:22}},
