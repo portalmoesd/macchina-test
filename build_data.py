@@ -4,6 +4,7 @@ Run: python build_data.py
 Outputs: data/trade.json
 """
 
+import csv
 import json
 from pathlib import Path
 
@@ -11,6 +12,15 @@ import pandas as pd
 
 DATA_DIR = Path("geostat_data")
 OUT_DIR = Path("data")
+
+# Load HS4 short titles mapping
+HS4_SHORT = {}
+_csv_path = Path(__file__).parent / "hs4_short_titles.csv"
+if _csv_path.exists():
+    with open(_csv_path, encoding="utf-8") as f:
+        for row in csv.reader(f):
+            if row and row[0].strip().isdigit():
+                HS4_SHORT[row[0].strip().zfill(4)] = row[1].strip()
 
 
 def load(filename, sheet):
@@ -194,9 +204,10 @@ def extract_hs4(filename, sheet="2020-2025-years"):
             except (ValueError, TypeError):
                 vals.append(0)
 
+        code_str = f"{code_int:04d}"
         products.append({
-            "c": f"{code_int:04d}",
-            "n": name_str,
+            "c": code_str,
+            "n": HS4_SHORT.get(code_str, name_str),
             "v": vals,
         })
 
@@ -262,8 +273,9 @@ def compute_hs4_ytd(filename):
                 val = 0
             cur_sum += val
 
-        products[f"{code_int:04d}"] = {
-            "n": name_str,
+        code_str = f"{code_int:04d}"
+        products[code_str] = {
+            "n": HS4_SHORT.get(code_str, name_str),
             "cur": round(cur_sum, 2),
             "prev": 0.0,
         }
@@ -310,7 +322,7 @@ def compute_hs4_ytd(filename):
 
             code_str = f"{code_int:04d}"
             if code_str not in products:
-                products[code_str] = {"n": name_str, "cur": 0.0, "prev": 0.0}
+                products[code_str] = {"n": HS4_SHORT.get(code_str, name_str), "cur": 0.0, "prev": 0.0}
 
             prev_sum = 0.0
             for j_idx in prev_cols:
