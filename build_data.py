@@ -411,6 +411,83 @@ def compute_hs4_ytd_with_reexport(export_file, domestic_file):
     }
 
 
+def extract_country_products(filename):
+    """Parse the country×product export Excel file.
+
+    Expected columns (0-indexed):
+      0: Country code
+      1: Country name (Georgian)
+      2: HS4 product code
+      3: Product name (Georgian)
+      4: Previous YTD value (Thsd USD)
+      5: Previous YTD tons
+      6: Previous YTD additional
+      7: Current YTD value (Thsd USD)
+      8: Current YTD tons
+      9: Current YTD additional
+
+    Returns dict: {country_code: [{c, n, cur, prev}, ...]}
+    """
+    fpath = DATA_DIR / filename
+    if not fpath.exists():
+        return None
+
+    df = pd.read_excel(fpath, header=None)
+
+    # Find data start row (skip headers / "სულ" / "მათ შორის:")
+    start_row = 0
+    for i in range(len(df)):
+        code = df.iloc[i, 0]
+        if pd.notna(code):
+            try:
+                int(float(code))
+                start_row = i
+                break
+            except (ValueError, TypeError):
+                continue
+
+    by_country = {}
+    for i in range(start_row, len(df)):
+        cc = df.iloc[i, 0]
+        hs = df.iloc[i, 2]
+        if pd.isna(cc) or pd.isna(hs):
+            continue
+        try:
+            cc_str = str(int(float(cc)))
+            hs_str = f"{int(float(hs)):04d}"
+        except (ValueError, TypeError):
+            continue
+
+        def _val(col):
+            v = df.iloc[i, col]
+            if pd.isna(v) or str(v).strip() == "-":
+                return 0.0
+            try:
+                return round(float(v), 2)
+            except (ValueError, TypeError):
+                return 0.0
+
+        prev_val = _val(4)
+        cur_val = _val(7)
+
+        if cur_val == 0 and prev_val == 0:
+            continue
+
+        name = HS4_SHORT.get(hs_str, str(df.iloc[i, 3]).strip() if pd.notna(df.iloc[i, 3]) else hs_str)
+        by_country.setdefault(cc_str, []).append({
+            "c": hs_str,
+            "n": name,
+            "cur": cur_val,
+            "prev": prev_val,
+        })
+
+    # Sort each country's products by current value descending
+    for cc in by_country:
+        by_country[cc].sort(key=lambda p: -p["cur"])
+
+    return by_country
+
+
 def extract_fdi_countries(filename, sheet="FDI (annual)"):
     df = pd.read_excel(DATA_DIR / "fdi" / filename, sheet_name=sheet, header=None)
     years_raw = df.iloc[3, 2:].tolist()
@@ -542,6 +619,9 @@ def main():
         "Domestic-Exports_by-4-digit-2014-2026.xlsx",
     )
 
+    print("Processing country×product exports...")
+    country_products = extract_country_products("export_by_country_product.xlsx")
+
     print("Processing FDI by country...")
     fdi_years, fdi_countries, fdi_total = extract_fdi_countries("FDI_Eng-countries.xlsx")
 
@@ -605,6 +685,7 @@ def main():
         "hs4_export": hs4_exp,
         "hs4_import": hs4_imp,
         "hs4_exp_ytd": hs4_exp_ytd,
+        "country_products": country_products,
         "fdi_years": fdi_years,
         "fdi_countries": {k: v["values"] for k, v in fdi_countries.items()},
         "fdi_country_names": {k: v["name"] for k, v in fdi_countries.items()},

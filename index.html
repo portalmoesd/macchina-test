@@ -340,34 +340,44 @@ function renderSummary(code){
   ch.style.display='flex';
 
   // ---- export products table ----
-  const ytdData=D.hs4_exp_ytd;
-  if(ytdData){
-    const minMln=0.01; // threshold in millions
-    const minThsd=minMln*1000; // in thousands
+  // Use country-specific data if available, else aggregate
+  const cpData=(!isTotal && D.country_products && D.country_products[code])
+    ? D.country_products[code] : null;
+  const ytdData=isTotal ? D.hs4_exp_ytd : null;
+  const rawProds=cpData || (ytdData ? ytdData.products : null);
 
-    let prods=[...ytdData.products].filter(p=>p.cur>0).sort((a,b)=>b.cur-a.cur);
+  if(rawProds && rawProds.length>0){
+    const minMln=0.01;
+    const minThsd=minMln*1000;
 
-    // Filter: remove < 0.01 Mln unless fewer than 5 remain
+    let prods=[...rawProds].filter(p=>p.cur>0).sort((a,b)=>b.cur-a.cur);
+
     const big=prods.filter(p=>p.cur>=minThsd);
     if(big.length>=5) prods=big;
 
     prods=prods.slice(0,15);
 
-    // p.cur is in thousands USD; display as millions
     const fmtExp=v=>{
       const m=v/1000;
       if(m<0.01&&v>0)return'< 0.01';
       return m.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     };
 
+    const hasRe=prods.some(p=>p.re!=null);
     document.getElementById('ep-body').innerHTML=prods.map(p=>{
       const chg=pct2(p.cur,p.prev);
       const cls=p.cur>=p.prev?'pos':'neg';
       const re=p.re!=null?Math.round(p.re)+'%':'-';
-      return `<tr><td style="text-align:left">${p.n}</td><td>${fmtExp(p.cur)}</td><td class="${cls}">${chg}</td><td>${re}</td></tr>`;
+      return `<tr><td style="text-align:left">${p.n}</td><td>${fmtExp(p.cur)}</td><td class="${cls}">${chg}</td>${hasRe?`<td>${re}</td>`:''}</tr>`;
     }).join('');
 
+    // Update header to show/hide re-export column
+    const epHead=document.querySelector('#export-products thead tr');
+    epHead.innerHTML=`<th style="text-align:left">Product</th><th>Export<br><span style="font-weight:400;font-size:.75rem">Mln. USD</span></th><th>Change<br><span style="font-weight:400;font-size:.75rem">%</span></th>${hasRe?'<th>Re-export share<br><span style="font-weight:400;font-size:.75rem">%</span></th>':''}`;
+
     document.getElementById('export-products').style.display='block';
+  } else {
+    document.getElementById('export-products').style.display='none';
   }
 }
 
