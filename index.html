@@ -227,7 +227,8 @@ function renderSummary(code){
   const em=isTotal?D.total_exp_monthly:(D.exp_monthly[code]||{});
   const im=isTotal?D.total_imp_monthly:(D.imp_monthly[code]||{});
 
-  const {latestYr,latestMo}=latestMonth(em);
+  // Always use the global latest period (from aggregate data)
+  const {latestYr,latestMo}=latestMonth(D.total_exp_monthly);
   if(!latestYr)return;
 
   const prevMonYr=latestYr-1;
