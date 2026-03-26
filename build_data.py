@@ -412,21 +412,23 @@ def compute_hs4_ytd_with_reexport(export_file, domestic_file):
 
 
 def extract_country_products(filename):
-    """Parse the country×product export Excel file.
+    """Parse the country×product export Excel file with E/RE rows.
 
     Expected columns (0-indexed):
-      0: Country code
-      1: Country name (Georgian)
-      2: HS4 product code
-      3: Product name (Georgian)
-      4: Previous YTD value (Thsd USD)
-      5: Previous YTD tons
-      6: Previous YTD additional
-      7: Current YTD value (Thsd USD)
-      8: Current YTD tons
-      9: Current YTD additional
+      0: Type — "E" (domestic export) or "RE" (re-export)
+      1: Country code
+      2: Country name (Georgian)
+      3: HS4 product code
+      4: Product name (Georgian)
+      5: Previous YTD value (Thsd USD)
+      6: Previous YTD tons
+      7: Previous YTD additional
+      8: Current YTD value (Thsd USD)
+      9: Current YTD tons
+      10: Current YTD additional
 
-    Returns dict: {country_code: [{c, n, cur, prev}, ...]}
+    Returns dict: {country_code: [{c, n, cur, prev, re}, ...]}
+    where cur/prev = total (E+RE), re = re-export share %.
     """
     fpath = DATA_DIR / filename
     if not fpath.exists():
@@ -434,22 +436,25 @@ def extract_country_products(filename):
 
     df = pd.read_excel(fpath, header=None)
 
-    # Find data start row (skip headers / "სულ" / "მათ შორის:")
-    start_row = 0
-    for i in range(len(df)):
-        code = df.iloc[i, 0]
-        if pd.notna(code):
-            try:
-                int(float(code))
-                start_row = i
-                break
-            except (ValueError, TypeError):
-                continue
+    def _val(row, col):
+        v = df.iloc[row, col]
+        if pd.isna(v) or str(v).strip() == "-":
+            return 0.0
+        try:
+            return round(float(v), 2)
+        except (ValueError, TypeError):
+            return 0.0
 
-    by_country = {}
-    for i in range(start_row, len(df)):
-        cc = df.iloc[i, 0]
-        hs = df.iloc[i, 2]
+    # Collect E and RE values per (country, hs4)
+    # Key: (country_code, hs4_code) -> {e_cur, e_prev, re_cur, re_prev}
+    data = {}
+    for i in range(len(df)):
+        typ = str(df.iloc[i, 0]).strip().upper() if pd.notna(df.iloc[i, 0]) else ""
+        if typ not in ("E", "RE"):
+            continue
+
+        cc = df.iloc[i, 1]
+        hs = df.iloc[i, 3]
         if pd.isna(cc) or pd.isna(hs):
             continue
         try:
@@ -458,30 +463,39 @@ def extract_country_products(filename):
         except (ValueError, TypeError):
             continue
 
-        def _val(col):
-            v = df.iloc[i, col]
-            if pd.isna(v) or str(v).strip() == "-":
-                return 0.0
-            try:
-                return round(float(v), 2)
-            except (ValueError, TypeError):
-                return 0.0
+        prev_val = _val(i, 5)
+        cur_val = _val(i, 8)
 
-        prev_val = _val(4)
-        cur_val = _val(7)
+        key = (cc_str, hs_str)
+        if key not in data:
+            data[key] = {"e_cur": 0, "e_prev": 0, "re_cur": 0, "re_prev": 0}
 
-        if cur_val == 0 and prev_val == 0:
+        if typ == "E":
+            data[key]["e_cur"] += cur_val
+            data[key]["e_prev"] += prev_val
+        else:
+            data[key]["re_cur"] += cur_val
+            data[key]["re_prev"] += prev_val
+
+    # Build per-country product lists
+    by_country = {}
+    for (cc_str, hs_str), vals in data.items():
+        total_cur = round(vals["e_cur"] + vals["re_cur"], 2)
+        total_prev = round(vals["e_prev"] + vals["re_prev"], 2)
+
+        if total_cur == 0 and total_prev == 0:
             continue
 
-        name = HS4_SHORT.get(hs_str, str(df.iloc[i, 3]).strip() if pd.notna(df.iloc[i, 3]) else hs_str)
+        name = HS4_SHORT.get(hs_str, hs_str)
+        re_share = round(vals["re_cur"] / total_cur * 100, 1) if total_cur > 0 else 0
         by_country.setdefault(cc_str, []).append({
             "c": hs_str,
             "n": name,
-            "cur": cur_val,
-            "prev": prev_val,
+            "cur": total_cur,
+            "prev": total_prev,
+            "re": re_share,
         })
 
-    # Sort each country's products by current value descending
     for cc in by_country:
         by_country[cc].sort(key=lambda p: -p["cur"])
 
