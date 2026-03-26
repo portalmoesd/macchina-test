@@ -162,6 +162,11 @@ function switchTab(t){
 (async()=>{
   const r=await fetch('data/trade.json');
   D=await r.json();
+  // Load country×product data (separate file, may not exist)
+  try{
+    const r2=await fetch('data/country_products.json');
+    if(r2.ok) D.country_products=await r2.json();
+  }catch(e){}
   const sel=document.getElementById('cs');
   sel.innerHTML='<option value="">-- Choose a country --</option>';
   D.countries.forEach(c=>{

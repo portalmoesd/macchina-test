@@ -633,9 +633,6 @@ def main():
         "Domestic-Exports_by-4-digit-2014-2026.xlsx",
     )
 
-    print("Processing country×product exports...")
-    country_products = extract_country_products("export_by_country_product.xlsx")
-
     print("Processing FDI by country...")
     fdi_years, fdi_countries, fdi_total = extract_fdi_countries("FDI_Eng-countries.xlsx")
 
@@ -699,7 +696,6 @@ def main():
         "hs4_export": hs4_exp,
         "hs4_import": hs4_imp,
         "hs4_exp_ytd": hs4_exp_ytd,
-        "country_products": country_products,
         "fdi_years": fdi_years,
         "fdi_countries": {k: v["values"] for k, v in fdi_countries.items()},
         "fdi_country_names": {k: v["name"] for k, v in fdi_countries.items()},
