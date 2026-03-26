@@ -18,4 +18,7 @@ python3 geostat_scraper.py download \
 
 python3 build_data.py
 
+echo "[$(date)] Fetching country×product data from trade API..."
+python3 fetch_country_products.py
+
 echo "[$(date)] Done."
