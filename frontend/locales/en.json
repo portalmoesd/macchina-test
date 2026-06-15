@@ -1,0 +1,551 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "library": "Library",
+    "statistics": "Statistics",
+    "admin": "Admin Panel",
+    "logout": "Log out",
+    "language": "Language"
+  },
+  "auth": {
+    "login": "Log In",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Sign In",
+    "loginError": "Invalid username or password"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "deputyTitle": "Deputy Dashboard",
+    "supervisorTitle": "Supervisor Dashboard",
+    "superCollabTitle": "Super-collaborator Dashboard",
+    "selectEvent": "Select event",
+    "selectEventPlaceholder": "Select event...",
+    "noEvents": "No events available",
+    "sections": "Required Sections",
+    "status": "Status",
+    "lastUpdated": "Last Updated",
+    "actions": "Actions",
+    "eventTitle": "Event",
+    "preview": "PREVIEW",
+    "upcomingEvents": "Upcoming events",
+    "noUpcoming": "No upcoming events",
+    "descCollab": "Select an event to view your assigned sections and submit your work.",
+    "descDeputy": "Choose an event to review and finalize before sending to the library.",
+    "descSupervisor": "Choose an event to review super-collaborator submissions before they move to the deputy stage.",
+    "descSuperCollab": "Choose an event to review collaborator submissions before they move to the supervisor stage.",
+    "approveAll": "Approve all",
+    "approveAllSections": "Approve all sections",
+    "confirmApproveAll": "Approve all {n} sections",
+    "sendToLibrary": "Send to library",
+    "sentToLibrary": "Document sent to library successfully.",
+    "country": "Country",
+    "language": "Language",
+    "deadline": "Deadline",
+    "workflow": "Workflow",
+    "workflowSimple": "Simple",
+    "workflowSimpleTooltip": "Simple workflow: every department contributes its own section, no responsible department.",
+    "sectionsSubtitle": "Review section progress, check who updated each part, and take action.",
+    "colSection": "SECTION",
+    "colProgress": "PROGRESS",
+    "colActions": "ACTIONS",
+    "openAllSections": "Open all Sections",
+    "noSections": "No sections for this event",
+    "historyToggle": "History",
+    "noHistory": "No history yet",
+    "loading": "Loading…",
+    "eligibleUsers": "Eligible Users",
+    "noEligibleUsers": "No eligible users",
+    "returnedBy": "Returned by {who}",
+    "returnRequestedBy": "Return requested by {who}",
+    "amendmentInProgress": "Amendment in progress",
+    "amendmentNote": "— the Document Submitter is editing this section. The chain below shows the previous approval history.",
+    "actionOpen": "OPEN",
+    "actionSubmit": "SUBMIT",
+    "actionApprove": "APPROVE",
+    "actionReturn": "RETURN",
+    "actionAskReturn": "ASK RETURN"
+  },
+  "status": {
+    "draft": "Draft",
+    "submitted_to_super_collaborator": "At Super-Collaborator",
+    "returned_by_super_collaborator": "Returned by Super-Collaborator",
+    "approved_by_super_collaborator": "Approved (Super-Collaborator)",
+    "submitted_to_curator": "At Curator",
+    "returned_by_curator": "Returned by Curator",
+    "approved_by_curator": "Approved (Curator)",
+    "submitted_to_supervisor": "At Supervisor",
+    "returned_by_supervisor": "Returned by Supervisor",
+    "approved_by_supervisor": "Approved (Supervisor)",
+    "submitted_to_deputy": "At Deputy",
+    "returned_by_deputy": "Returned by Deputy",
+    "approved_by_deputy": "Approved (Deputy)",
+    "submitted_to_receiving_super_collaborator": "At Super-Collaborator (Review)",
+    "returned_by_receiving_super_collaborator": "Returned by Super-Collaborator (Review)",
+    "approved_by_receiving_super_collaborator": "Approved (Super-Collaborator Review)",
+    "submitted_to_receiving_supervisor": "At Supervisor (Review)",
+    "returned_by_receiving_supervisor": "Returned by Supervisor (Review)",
+    "approved_by_receiving_supervisor": "Approved (Supervisor Review)",
+    "submitted_to_amending_ds": "Amendment in progress (DS)",
+    "approved_by_ds_amendment": "Amended (DS)"
+  },
+  "roles": {
+    "ADMIN": "Admin",
+    "PROTOCOL": "Protocol",
+    "DEPUTY": "Deputy",
+    "SUPERVISOR": "Supervisor",
+    "SUPER_COLLABORATOR": "Super-Collaborator",
+    "COLLABORATOR": "Collaborator",
+    "ANALYST": "Analyst",
+    "CURATOR": "Curator",
+    "RECEIVING_SUPER_COLLABORATOR": "Super-Collaborator",
+    "RECEIVING_SUPERVISOR": "Supervisor"
+  },
+  "lang": {
+    "EN": "English",
+    "RU": "Русский",
+    "KA": "ქართული"
+  },
+  "statistics": {
+    "country": "Country",
+    "searchCountry": "Search country...",
+    "generate": "Generate",
+    "mainExportProducts": "Main Export Products",
+    "product": "Product (HS 4-digit)",
+    "value": "Value, mln $",
+    "change": "Change, %",
+    "reexportShare": "Re-export share, %",
+    "total": "Total (displayed products)",
+    "noData": "No data found",
+    "tradeTab": "Trade",
+    "tourismTab": "Tourism",
+    "investmentsTab": "Investments",
+    "companiesTab": "Companies",
+    "appendixTab": "Appendix",
+    "exportPdf": "PDF",
+    "exportWord": "Word",
+    "reportLang": "Report language",
+    "noResults": "No results",
+    "reportFailed": "Failed to generate report:",
+    "pdfLibMissing": "PDF library not loaded. Please refresh the page.",
+    "pdfExportFailed": "Failed to export PDF:",
+    "wordExportFailed": "Failed to export Word:"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "add": "Add",
+    "remove": "Remove",
+    "back": "Back",
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading...",
+    "search": "Search",
+    "from": "From",
+    "to": "To",
+    "all": "All",
+    "actions": "Actions",
+    "submit": "Submit",
+    "approve": "Approve",
+    "return": "Return",
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "calendar": {
+    "pageTitle": "Events",
+    "createEvent": "+ Create Event",
+    "tabs": {
+      "upcoming": "Upcoming",
+      "completed": "Completed Events",
+      "archived": "Archived Events"
+    },
+    "filter": {
+      "keywordPlaceholder": "Title or occasion...",
+      "allCountries": "All countries"
+    },
+    "templates": {
+      "title": "My Templates",
+      "create": "+ New Template",
+      "empty": "No templates yet",
+      "modalCreate": "Create Template",
+      "confirmDelete": "Delete this template?",
+      "nameLabel": "Template Name *",
+      "namePlaceholder": "e.g. My Custom Template",
+      "warnName": "Template name is required"
+    },
+    "confirmEnd": "End this event? This action cannot be undone.",
+    "modal": {
+      "createTitle": "Create Event",
+      "editTitle": "Edit Event",
+      "detailsTitle": "Event Details"
+    },
+    "form": {
+      "title": "Title *",
+      "titleNoStar": "Title",
+      "country": "Country *",
+      "workflow": "Workflow *",
+      "workflowSimple": "Simple",
+      "workflowAdvanced": "Advanced",
+      "dsRole": "Document Submitter Role *",
+      "deputy": "Deputy *",
+      "responsibleSupervisor": "Responsible Supervisor *",
+      "supervisor": "Supervisor *",
+      "superCollaborator": "Super-Collaborator *",
+      "language": "Language",
+      "deadline": "Deadline",
+      "curatorRequired": "Curator Required",
+      "task": "Task",
+      "template": "Template",
+      "sections": "Sections",
+      "addSection": "+ Add Section",
+      "selectPlaceholder": "— Select —",
+      "selectDeputy": "— Select Deputy —",
+      "selectSupervisor": "— Select Supervisor —",
+      "selectSuperCollaborator": "— Select Super-Collaborator —",
+      "selectTemplate": "— Select Template —",
+      "sectionTitlePlaceholder": "Section title"
+    },
+    "warn": {
+      "missingRequired": "Title, Country, and DS Role are required",
+      "missingSection": "Add at least one section"
+    },
+    "action": {
+      "view": "View",
+      "end": "End"
+    }
+  },
+  "admin": {
+    "tabs": {
+      "departments": "Departments",
+      "users": "Users",
+      "links": "Deputy–Supervisor Links",
+      "hierarchy": "Department Hierarchy",
+      "uploads": "Data Uploads"
+    },
+    "dept": {
+      "title": "Departments",
+      "add": "+ Add Department",
+      "empty": "No departments yet",
+      "col": {
+        "nameKa": "Name (KA)",
+        "nameEn": "Name (EN)",
+        "type": "Type"
+      },
+      "type": {
+        "agency": "Agency",
+        "department": "Department"
+      },
+      "modal": {
+        "add": "Add Department"
+      },
+      "form": {
+        "name": "Name",
+        "external": "External organization"
+      }
+    },
+    "user": {
+      "title": "Users",
+      "add": "+ Add User",
+      "empty": "No users yet",
+      "col": {
+        "name": "Name",
+        "username": "Username",
+        "role": "Role",
+        "dept": "Department / Entity",
+        "external": "External",
+        "actions": "Actions"
+      },
+      "modal": {
+        "add": "Add User",
+        "edit": "Edit User —"
+      },
+      "form": {
+        "fullName": "Full Name",
+        "username": "Username",
+        "email": "Email",
+        "password": "Password",
+        "passwordEdit": "New Password (leave blank to keep current)",
+        "role": "Role",
+        "dept": "Department",
+        "deptNone": "— None —",
+        "external": "External user",
+        "entity": "Entity",
+        "countries": "Country Assignments"
+      }
+    },
+    "link": {
+      "title": "Deputy–Supervisor Links",
+      "add": "+ Add Link",
+      "empty": "No links defined yet",
+      "col": {
+        "deputy": "Deputy",
+        "supervisor": "Supervisor",
+        "dept": "Department",
+        "actions": "Actions"
+      },
+      "confirmDelete": "Remove this link?",
+      "modal": {
+        "add": "Add Deputy–Supervisor Link"
+      },
+      "form": {
+        "deputy": "Deputy",
+        "supervisor": "Supervisor",
+        "selectDeputy": "— Select Deputy —",
+        "selectSupervisor": "— Select Supervisor —"
+      }
+    },
+    "hier": {
+      "title": "Department Hierarchy",
+      "desc": "Shows how Supervisors, Super-Collaborators, and Collaborators are grouped within each department.",
+      "empty": "No departments with assigned users",
+      "deputy": "Deputy",
+      "noDeputy": "No deputy linked",
+      "supervisors": "Supervisors",
+      "superCollabs": "Super-Collaborators",
+      "collaborators": "Collaborators",
+      "none": "— None —"
+    },
+    "upload": {
+      "fdiTitle": "FDI Sectors",
+      "fdiDesc": "Upload the Georgian FDI-by-country-by-sector XLSX file. The file must have a header row with \"ქვეყნის კოდი\" in column A, then one block per country (code, name, \"სულ\" row, sector sub-rows).",
+      "companiesTitle": "Companies",
+      "companiesDesc": "Upload the active-companies XLSX file. Column S contains the active flag (blank = inactive), column V lists the capital-origin countries separated by \" / \". The file is parsed in your browser; only the small aggregated summary is sent to the server.",
+      "btn": "Upload",
+      "loading": "Loading…",
+      "current": "Current",
+      "countries": "countries",
+      "noFile": "No file uploaded yet",
+      "uploading": "Uploading…",
+      "parsing": "Parsing file in your browser…",
+      "uploadingSummary": "Uploading summary…",
+      "success": "Uploaded successfully",
+      "failure": "Upload failed",
+      "errChooseFile": "Please choose a file",
+      "errParser": "Spreadsheet parser not loaded — check your connection",
+      "errNoSheet": "Workbook has no sheets",
+      "errNoActive": "No active companies with foreign capital found in the file",
+      "fdiAnnualOk": "annual FDI table refreshed through {period}",
+      "fdiAnnualFail": "annual FDI refresh failed ({error}) — previous table kept"
+    },
+    "status": {
+      "title": "Data Status",
+      "trade": "Trade data: current through {period} · new month detected {detected} · last checked {checked}",
+      "tradeUnknown": "Trade data: publication not checked yet"
+    }
+  },
+  "library": {
+    "filter": {
+      "search": "Search",
+      "searchPlaceholder": "Title...",
+      "country": "Country"
+    },
+    "empty": "No documents found",
+    "meta": {
+      "language": "Language:",
+      "ds": "DS:",
+      "completed": "Completed:"
+    },
+    "btn": {
+      "preview": "Preview",
+      "pdf": "PDF",
+      "word": "Word",
+      "files": "Files",
+      "edit": "Edit"
+    },
+    "editTooltip": "Reopen this document for editing — it will leave the Library until you re-publish.",
+    "sectionSelect": {
+      "selectAll": "Select all",
+      "warnEmpty": "Select at least one section."
+    },
+    "export": {
+      "pdfTitle": "Export PDF",
+      "wordTitle": "Export Word",
+      "fail": "Export failed:",
+      "wordFail": "Word export failed:"
+    },
+    "preview": {
+      "failLoad": "Failed to load document:"
+    },
+    "files": {
+      "title": "Uploaded Files",
+      "empty": "No files uploaded for this event.",
+      "col": {
+        "file": "File",
+        "section": "Section",
+        "uploaded": "Uploaded",
+        "by": "By",
+        "size": "Size"
+      },
+      "failLoad": "Failed to load files:"
+    },
+    "reopen": {
+      "confirm": "Reopen this document for editing? It will leave the Library until you re-publish.",
+      "fail": "Failed to reopen:",
+      "unknownError": "Unknown error"
+    }
+  },
+  "editor": {
+    "pageTitle": "Section Editor",
+    "allTitle": "All Sections",
+    "saveAll": "Save All",
+    "backToDashboard": "Back to Dashboard",
+    "errMissingIds": "Missing event_id or section_id",
+    "errSectionNotFound": "Section not found in event",
+    "statusLabel": "Status:",
+    "lastEditedBy": "Last edited by:",
+    "askReturn": "Ask to Return",
+    "pushSection": "Push Section",
+    "pullSection": "Pull Section",
+    "saved": "Saved successfully",
+    "saveFailed": "Save failed:",
+    "submitted": "Submitted successfully",
+    "submitFailed": "Submit failed:",
+    "approved": "Approved successfully",
+    "approveFailed": "Approve failed:",
+    "returned": "Returned successfully",
+    "returnFailed": "Return failed:",
+    "requestSent": "Return request sent",
+    "requestFailed": "Request failed:",
+    "pushed": "Section pushed successfully",
+    "pushFailed": "Push failed:",
+    "pulled": "Section pulled successfully",
+    "pullFailed": "Pull failed:",
+    "confirmSubmit": "Submit section",
+    "confirmApprove": "Approve section",
+    "confirmPush": "Push section",
+    "confirmPull": "Pull section",
+    "returnTitle": "Return section",
+    "returnPlaceholder": "Add a comment...",
+    "returnPlaceholderOptional": "Add a comment (optional)...",
+    "askReturnTitle": "Request return",
+    "askReturnPlaceholder": "Reason for return request...",
+    "sendRequest": "Send request",
+    "comment": {
+      "addTitle": "Add comment",
+      "placeholder": "Enter your comment...",
+      "failed": "Failed:",
+      "replyFailed": "Reply failed:"
+    },
+    "files": {
+      "title": "Files",
+      "empty": "No files uploaded yet",
+      "loadFailed": "Could not load files",
+      "uploaded": "Files uploaded",
+      "uploadFailed": "Upload failed",
+      "deleted": "File deleted",
+      "deleteFailed": "Delete failed:",
+      "confirmDelete": "Delete this file?",
+      "download": "Download",
+      "dropHere": "Drop files here or ",
+      "browse": "browse",
+      "countOne": "file",
+      "countMany": "files"
+    },
+    "history": {
+      "title": "History",
+      "empty": "No history yet",
+      "noComment": "No comment provided",
+      "unknownUser": "Unknown",
+      "stage": {
+        "scReview": "Super-Collaborator (Review)",
+        "svReview": "Supervisor (Review)"
+      },
+      "action": {
+        "saved": "Edited",
+        "submitted": "Submitted",
+        "approved": "Approved",
+        "returned": "Returned",
+        "askedToReturn": "Asked to Return",
+        "pushed": "Pushed",
+        "pulled": "Pulled"
+      }
+    },
+    "saveAll": {
+      "noneEditable": "No editable sections to save",
+      "inProgress": "Saving…",
+      "allSaved": "All sections saved"
+    },
+    "status": {
+      "saved": "Saved",
+      "sectionOf": "Section {n} of {total}",
+      "sectionsCount": "{total} sections",
+      "words": "{n} words"
+    },
+    "action": {
+      "openInEditor": "Open in Editor",
+      "updated": "Updated:",
+      "by": "by"
+    },
+    "toolbar": {
+      "group": {
+        "font": "Font",
+        "format": "Format",
+        "paragraph": "Paragraph",
+        "insert": "Insert",
+        "review": "Review"
+      }
+    },
+    "tool": {
+      "bold": "Bold (Ctrl+B)",
+      "italic": "Italic (Ctrl+I)",
+      "underline": "Underline (Ctrl+U)",
+      "superscript": "Superscript",
+      "subscript": "Subscript",
+      "h2": "Heading 2",
+      "h3": "Heading 3",
+      "insertUnorderedList": "Bullet list",
+      "insertOrderedList": "Numbered list",
+      "justifyLeft": "Align left",
+      "justifyCenter": "Center",
+      "justifyRight": "Align right",
+      "justifyFull": "Justify",
+      "removeFormat": "Clear formatting"
+    },
+    "color": {
+      "font": "Font colour",
+      "highlight": "Highlight / background colour",
+      "custom": "Custom colour…"
+    },
+    "table": {
+      "insert": "Insert table",
+      "size": "{r} × {c} table"
+    },
+    "tc": {
+      "label": "Changes",
+      "toggleTitle": "Show / Hide Changes",
+      "toggleAria": "Show or hide tracked changes",
+      "acceptAll": "Accept All",
+      "rejectAll": "Reject All"
+    },
+    "comments": {
+      "toggleTitle": "Comments",
+      "toggleAria": "Toggle comments panel"
+    },
+    "fullscreen": {
+      "title": "Fullscreen (Esc to exit)",
+      "aria": "Toggle fullscreen"
+    },
+    "balloon": {
+      "showMore": "Show more",
+      "showLess": "Show less",
+      "accept": "Accept",
+      "reject": "Reject",
+      "formatted": "Formatted",
+      "changesCount": "{n} changes"
+    },
+    "find": {
+      "findPlaceholder": "Find...",
+      "replacePlaceholder": "Replace...",
+      "replace": "Replace",
+      "replaceAll": "Replace All",
+      "prev": "Previous",
+      "next": "Next"
+    }
+  }
+}

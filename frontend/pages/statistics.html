@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Statistics</title>
+  <link rel="stylesheet" href="/css/variables.css" />
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/statistics.css" />
+  <link rel="stylesheet" href="/css/georgian-fonts.css" />
+  <link rel="stylesheet" href="/css/apple.css" />
+  <style>
+    /* Standalone statistics app: no sidebar, so the main column is full-width. */
+    .main { margin-left: 0 !important; }
+    .topbar { justify-content: space-between; }
+    .site-lang-toggle { display: inline-flex; gap: 2px; background: var(--surface, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 8px; padding: 2px; }
+    .site-lang-toggle button { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; cursor: pointer; font: inherit; color: var(--text-secondary, #64748b); }
+    .site-lang-toggle button.is-active { background: var(--primary, #2563eb); color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <main class="main">
+      <div class="topbar">
+        <div class="page-title" data-i18n="nav.statistics">Statistics</div>
+        <div class="site-lang-toggle" id="siteLangToggle" role="radiogroup" aria-label="Language">
+          <button type="button" data-lang="ka">ქარ</button>
+          <button type="button" data-lang="en">EN</button>
+        </div>
+      </div>
+
+      <!-- Sticky header: controls + tabs -->
+      <div class="stat-sticky-header">
+        <div class="card stat-controls">
+          <div class="stat-controls__row">
+            <div class="form-group stat-controls__country">
+              <label class="form-label" data-i18n="statistics.country">Country</label>
+              <div class="stat-search-wrap">
+                <input type="text" id="countrySearch" class="form-input" data-i18n-placeholder="statistics.searchCountry" placeholder="Search country..." autocomplete="off" />
+                <div id="countryDropdown" class="stat-dropdown hidden"></div>
+              </div>
+              <input type="hidden" id="countryValue" />
+            </div>
+            <div class="form-group stat-controls__btn-wrap">
+              <label class="form-label">&nbsp;</label>
+              <div class="stat-controls__buttons">
+                <div class="stat-lang-toggle" id="reportLangToggle" role="radiogroup" data-i18n-aria-label="statistics.reportLang" aria-label="Report language">
+                  <button type="button" class="stat-lang-toggle__btn" data-report-lang="ka">ქართ</button>
+                  <button type="button" class="stat-lang-toggle__btn" data-report-lang="en">EN</button>
+                </div>
+                <button class="btn btn-primary" id="generateBtn" disabled data-i18n="statistics.generate">Generate</button>
+                <button class="btn btn-outline" id="exportPdfBtn" disabled data-i18n="statistics.exportPdf">PDF</button>
+                <button class="btn btn-outline" id="exportWordBtn" disabled data-i18n="statistics.exportWord">Word</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-tabs">
+            <button class="stat-tab active" data-tab="trade" data-i18n="statistics.tradeTab">ვაჭრობა</button>
+            <button class="stat-tab" data-tab="tourism" data-i18n="statistics.tourismTab">ტურიზმი</button>
+            <button class="stat-tab" data-tab="investments" data-i18n="statistics.investmentsTab">ინვესტიციები</button>
+            <button class="stat-tab" data-tab="companies" data-i18n="statistics.companiesTab">კომპანიები</button>
+            <button class="stat-tab" data-tab="appendix" data-i18n="statistics.appendixTab">დანართი</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- All sections render sequentially after Generate -->
+      <div id="statSections" class="stat-sections hidden">
+
+        <!-- Unified top-level loader shown whenever any section is
+             regenerating (new country chosen, report language toggled).
+             While visible, the five sections below are hidden via the
+             .is-loading class on #statSections, so the page shows one
+             spinner instead of stale content beside an empty one. -->
+        <div id="globalReportLoading" class="stat-report__loading hidden">
+          <div class="stat-spinner"></div>
+          <span class="stat-loading-label" data-i18n="common.loading">Loading...</span>
+        </div>
+
+        <!-- Trade section -->
+        <section id="section-trade" class="stat-section">
+          <h2 class="stat-section__heading" data-stat-heading="trade">ვაჭრობა</h2>
+          <div id="reportLoading" class="stat-report__loading hidden">
+            <div class="stat-spinner"></div>
+            <span class="stat-loading-label" data-i18n="common.loading">Loading...</span>
+          </div>
+          <div id="tradeSummary" class="card stat-summary hidden"></div>
+          <div class="card">
+            <div id="overviewHeader" class="stat-report__header"></div>
+            <div id="overviewTable" class="table-wrap"></div>
+          </div>
+          <div id="tradeChartsRow" class="stat-charts-row">
+            <div class="card stat-chart-card">
+              <div id="turnoverChartHeader" class="stat-report__header"></div>
+              <canvas id="turnoverChart"></canvas>
+            </div>
+            <div class="card stat-chart-card">
+              <div id="dynamicsChartHeader" class="stat-report__header"></div>
+              <canvas id="dynamicsChart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div id="exportHeader" class="stat-report__header"></div>
+            <div id="exportTable" class="table-wrap"></div>
+          </div>
+          <div class="stat-charts-row">
+            <div class="card stat-chart-card">
+              <div id="exportIncreaseHeader" class="stat-report__header"></div>
+              <div id="exportIncreaseTable" class="table-wrap"></div>
+            </div>
+            <div class="card stat-chart-card">
+              <div id="exportDropHeader" class="stat-report__header"></div>
+              <div id="exportDropTable" class="table-wrap"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div id="importHeader" class="stat-report__header"></div>
+            <div id="importTable" class="table-wrap"></div>
+          </div>
+          <div class="stat-charts-row">
+            <div class="card stat-chart-card">
+              <div id="importIncreaseHeader" class="stat-report__header"></div>
+              <div id="importIncreaseTable" class="table-wrap"></div>
+            </div>
+            <div class="card stat-chart-card">
+              <div id="importDropHeader" class="stat-report__header"></div>
+              <div id="importDropTable" class="table-wrap"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tourism section -->
+        <section id="section-tourism" class="stat-section">
+          <h2 class="stat-section__heading" data-stat-heading="tourism">ტურიზმი</h2>
+          <div id="tourismLoading" class="stat-report__loading hidden">
+            <div class="stat-spinner"></div>
+            <span class="stat-loading-label" data-i18n="common.loading">Loading...</span>
+          </div>
+          <div class="card">
+            <div id="tourismSummary" class="stat-summary hidden"></div>
+            <div id="tourismChartHeader" class="stat-report__header"></div>
+            <div id="tourismRow" class="stat-investments-row">
+              <div class="stat-investments-table-wrap">
+                <div id="tourismTable" class="table-wrap"></div>
+              </div>
+              <div class="stat-investments-chart-wrap">
+                <canvas id="tourismChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Investments section -->
+        <section id="section-investments" class="stat-section">
+          <h2 class="stat-section__heading" data-stat-heading="investments">ინვესტიციები</h2>
+          <div id="investmentsLoading" class="stat-report__loading hidden">
+            <div class="stat-spinner"></div>
+            <span class="stat-loading-label" data-i18n="common.loading">Loading...</span>
+          </div>
+          <div class="card">
+            <div id="investmentsSummary" class="stat-summary hidden"></div>
+            <div id="fdiChartHeader" class="stat-report__header"></div>
+            <div id="fdiRow" class="stat-investments-row">
+              <div class="stat-investments-table-wrap">
+                <div id="fdiTable" class="table-wrap"></div>
+              </div>
+              <div class="stat-investments-chart-wrap">
+                <canvas id="fdiChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div id="fdiSectorsCard" class="card hidden">
+            <div id="fdiSectorsHeader" class="stat-report__header"></div>
+            <div id="fdiSectorsTable" class="table-wrap"></div>
+          </div>
+        </section>
+
+        <!-- Companies section -->
+        <section id="section-companies" class="stat-section">
+          <h2 class="stat-section__heading" data-stat-heading="companies">კომპანიები</h2>
+          <div id="companiesLoading" class="stat-report__loading hidden">
+            <div class="stat-spinner"></div>
+            <span class="stat-loading-label" data-i18n="common.loading">Loading...</span>
+          </div>
+          <div id="companiesSummary" class="card stat-summary hidden"></div>
+        </section>
+
+        <!-- Appendix section -->
+        <section id="section-appendix" class="stat-section">
+          <h2 class="stat-section__heading" data-stat-heading="appendix">დანართი</h2>
+          <div id="appendixLoading" class="stat-report__loading hidden">
+            <div class="stat-spinner"></div>
+            <span class="stat-loading-label" data-i18n="common.loading">Loading...</span>
+          </div>
+          <div id="appendixHeader" class="stat-report__header"></div>
+          <div id="appendixTable" class="stat-appendix-wrap"></div>
+        </section>
+
+      </div>
+
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/pdfmake.min.js"></script>
+  <script src="/js/core/config.js"></script>
+  <script src="/js/core/i18n.js"></script>
+  <script src="/js/core/utils.js"></script>
+  <script src="/js/core/app.js"></script>
+  <script src="/js/pages/font-utils.js"></script>
+  <script src="/js/pages/statistics-pdf.js"></script>
+  <script src="/js/pages/statistics-word.js"></script>
+  <script src="/js/pages/statistics.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "statistics-app",
+  "version": "1.0.0",
+  "description": "Standalone trade / tourism / investments / companies statistics reports (Georgia), powered by the Geostat and GNTA data sources.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "xlsx": "^0.18.5"
+  }
+}
