@@ -1,4 +1,7 @@
-geostat_data/
-__pycache__/
-*.pyc
+node_modules/
 .env
+*.log
+
+# Runtime caches written by the backend (refreshed from Geostat / GNTA).
+server/data/store/
+server/data/tourism-cache.json
